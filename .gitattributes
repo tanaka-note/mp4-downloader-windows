@@ -2,4 +2,7 @@
 *.zip binary
 *.png binary
 *.ico binary
-licenses/** whitespace=-blank-at-eol
+# Preserve upstream legal text and compiler records, including original whitespace.
+licenses/** -whitespace
+THIRD_PARTY_LICENSES.txt -whitespace
+tools/media-provenance/** -whitespace
