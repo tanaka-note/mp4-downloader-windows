@@ -25,4 +25,4 @@ jobs:
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git add tools/vendor/media-tools.zip
           git commit -m 'Preserve fixed-source media compilation'
-          git push origin HEAD:refs/heads/codex/generated-media-tools
+          git push origin HEAD:refs/heads/codex/media-build-36230644827
