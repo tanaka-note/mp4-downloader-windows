@@ -4,7 +4,9 @@
     "tools/Build-Streaming.ps1",
     "tools/Install-Tools.ps1",
     "tools/LicensePolicy.ps1",
-    "tools/Test-LicenseGate.ps1"
+    "tools/Test-LicenseGate.ps1",
+    "tools/Collect-Notices.ps1",
+    "tools/streaming-notices.lock.json"
   ],
   "sources": [
     {

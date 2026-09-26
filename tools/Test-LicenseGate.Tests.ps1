@@ -19,6 +19,10 @@ try{
  $pins | ConvertTo-Json | Set-Content $badPins
  MustReject {& (Join-Path $PSScriptRoot 'Test-LicenseGate.ps1') -BinaryPins $badPins} 'Binary checksum mismatch'
  MustReject {& (Join-Path $PSScriptRoot 'Test-LicenseGate.ps1') -NoticesDirectory $temporary} 'License notice missing'
+ $notices=Get-Content (Join-Path $PSScriptRoot 'streaming-notices.lock.json') -Raw | ConvertFrom-Json
+ $notices.notices[0].sha256='0'*64;$badNotices=Join-Path $temporary 'bad-notices.json'
+ $notices | ConvertTo-Json -Depth 5 | Set-Content $badNotices
+ MustReject {& (Join-Path $PSScriptRoot 'Test-LicenseGate.ps1') -StreamingNoticesLock $badNotices} 'Streaming dependency original license missing/changed'
  MustReject {& (Join-Path $PSScriptRoot 'Test-LicenseGate.ps1') -SourcePackage (Join-Path $temporary 'missing.zip')} 'Corresponding source archive missing'
  Add-Type -AssemblyName System.IO.Compression.FileSystem
  $empty=Join-Path $temporary 'bad-source.zip';$archive=[IO.Compression.ZipFile]::Open($empty,[IO.Compression.ZipArchiveMode]::Create)
