@@ -1,0 +1,22 @@
+name: Build licensed media tools
+on:
+  push:
+    paths: ['tools/Build-Media.sh', 'tools/media-sources.lock.json', '.github/workflows/build-media.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install cross compiler
+        run: sudo apt-get update && sudo apt-get install -y gcc-mingw-w64-x86-64-posix g++-mingw-w64-x86-64-posix nasm make autoconf automake libtool pkg-config zip
+      - name: Build fixed sources
+        run: bash tools/Build-Media.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: media-tools
+          path: artifacts/media-tools.zip
+          if-no-files-found: error
