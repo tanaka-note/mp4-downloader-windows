@@ -3,6 +3,8 @@ set -euo pipefail
 root=$(cd "$(dirname "$0")/.." && pwd)
 work="$root/artifacts/media-build"
 mkdir -p "$work/sources" "$work/prefix" "$work/output/licenses"
+# Archive build scripts must not mistake the containing app repository for upstream Git history.
+export GIT_CEILING_DIRECTORIES="$work"
 python3 - "$root/tools/media-sources.lock.json" "$work/sources" <<'PY'
 import json,hashlib,urllib.request,sys,pathlib
 for item in json.load(open(sys.argv[1]))['sources']:
@@ -38,6 +40,8 @@ make -j2 ffmpeg.exe ffprobe.exe
 cp ffmpeg.exe ffprobe.exe "$work/output/"
 cp config.h ffbuild/config.mak "$work/output/"
 cp COPYING* LICENSE.md "$work/output/licenses/"
+cp /usr/share/doc/mingw-w64-common/copyright "$work/output/licenses/MinGW-runtime-copyright.txt"
+cp /usr/share/doc/gcc-mingw-w64-x86-64-posix/copyright "$work/output/licenses/GCC-runtime-copyright.txt"
 for name in x264 libvpx opus; do
   mkdir -p "$work/output/licenses/$name"
   find "$work/$name" -maxdepth 1 -type f \( -iname '*copying*' -o -iname '*license*' -o -iname '*patents*' -o -iname '*authors*' \) -exec cp {} "$work/output/licenses/$name/" \;
