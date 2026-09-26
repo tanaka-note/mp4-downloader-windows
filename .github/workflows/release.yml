@@ -1,0 +1,55 @@
+name: Draft Windows release
+on:
+  push:
+    tags: ['v*']
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: windows-2025
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - name: Check release version
+        shell: pwsh
+        run: |
+          $policy=Get-Content tools/release-policy.json -Raw | ConvertFrom-Json
+          if ($env:GITHUB_REF_NAME -ne ('v'+$policy.version)) { throw 'Tag/version mismatch' }
+      - name: Install fixed tools
+        shell: pwsh
+        run: ./tools/Install-Tools.ps1
+      - name: Locked restore
+        run: dotnet restore MP4Downloader.slnx -p:Platform=x64 --locked-mode
+      - name: Build
+        run: dotnet build MP4Downloader.slnx -c Release -p:Platform=x64 --no-restore
+      - name: Tests
+        run: dotnet test MP4Downloader.slnx -c Release -p:Platform=x64 --no-build
+      - name: Publish
+        shell: pwsh
+        run: ./tools/Publish.ps1
+      - name: Corresponding sources
+        shell: pwsh
+        run: ./tools/Package-Sources.ps1
+      - name: License regression
+        shell: pwsh
+        run: ./tools/Test-LicenseGate.Tests.ps1
+      - name: Release package
+        shell: pwsh
+        run: ./tools/Package.ps1 -ForRelease
+      - name: Release assets and SHA256 gate
+        shell: pwsh
+        run: ./tools/Release-Assets.ps1
+      - name: Extracted ZIP smoke
+        shell: pwsh
+        run: ./tools/Smoke-Test.ps1 -PublishDirectory ./artifacts/package-smoke -ReleaseSmoke
+      - name: Create draft only
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create $env:GITHUB_REF_NAME --draft --target $env:GITHUB_SHA --title 'MP4 Downloader v0.1.0' --notes-file docs/release-notes-v0.1.0.md artifacts/Mp4Downloader-v0.1.0-win-x64.zip artifacts/Mp4Downloader-v0.1.0-third-party-sources.zip artifacts/SHA256SUMS artifacts/LICENSE artifacts/THIRD_PARTY_NOTICES.md artifacts/THIRD_PARTY_TERMS.md artifacts/THIRD_PARTY_LICENSES.txt
+          if ($LASTEXITCODE -ne 0) { throw 'Draft release creation failed' }
+# Publication follows explicit re-download, SHA verification and normal-user Windows smoke.

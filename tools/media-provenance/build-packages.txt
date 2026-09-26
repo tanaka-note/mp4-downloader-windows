@@ -1,0 +1,9 @@
+autoconf	2.71-3
+automake	1:1.16.5-1.3ubuntu1
+gcc-mingw-w64-x86-64-posix	13.2.0-6ubuntu1+26.1
+libtool	2.4.7-7build1
+make	4.3-4.1build2
+mingw-w64-common	11.0.1-3build1
+mingw-w64-x86-64-dev	11.0.1-3build1
+nasm	2.16.01-1build1
+pkg-config:amd64	1.8.1-2build1

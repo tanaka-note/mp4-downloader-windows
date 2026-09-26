@@ -1,0 +1,30 @@
+
+  configuration:
+    --target-os=mingw32
+    --arch=x86_64
+    --enable-cross-compile
+    --cross-prefix=x86_64-w64-mingw32-
+    --cc=x86_64-w64-mingw32-gcc-posix
+    --pkg-config=pkg-config --pkg-config-flags=--static
+    --prefix=/home/runner/work/mp4-downloader-windows/mp4-downloader-windows/artifacts/media-build/prefix
+    --disable-autodetect
+    --enable-gpl
+    --enable-version3
+    --enable-libx264
+    --enable-libvpx
+    --enable-libopus
+    --enable-static
+    --disable-shared
+    --disable-network
+    --disable-devices
+    --enable-indev=lavfi
+    --disable-doc
+    --disable-debug
+    --disable-ffplay
+    --disable-iconv
+    --disable-zlib
+    --disable-bzlib
+    --disable-lzma
+    --extra-ldflags=-static
+
+Exiting with exit code 0

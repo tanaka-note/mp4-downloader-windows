@@ -1,0 +1,6 @@
+{
+  "version": "0.1.0",
+  "publicRedistributionApproved": true,
+  "blockers": [],
+  "basis": "Exact minimal GPLv3+ FFmpeg sources/build records, official zipimport yt-dlp with isolated runtimes, component notices and manifest verified by fail-closed license gate."
+}

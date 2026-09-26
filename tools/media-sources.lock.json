@@ -1,0 +1,11 @@
+{
+  "sources": [
+    {"name":"ffmpeg","version":"9.0.2","commit":"946fcce07b6dcd0331c8cc609192aeff5e1924f8","license":"GPL-3.0-or-later","url":"https://codeload.github.com/FFmpeg/FFmpeg/tar.gz/refs/tags/n9.0.2","sha256":"6e374ed621e48faa40639307dff48ba6fe574a509977956d2cce9669b7cc27e9"},
+    {"name":"x264","version":"stable-2026-09-26","commit":"b35605ace3ddf7c1a5d67a2eb553f034aef41d55","license":"GPL-2.0-or-later","url":"https://codeload.github.com/mirror/x264/tar.gz/b35605ace3ddf7c1a5d67a2eb553f034aef41d55","sha256":"cd71a7515b0e9a012e1ac9b1f8415bebcaf6fc97d4db32286642ac4c0fbe24f9"},
+    {"name":"libvpx","version":"1.15.2","commit":"d168454ecd099805c675d4a98c66f4891373302a","license":"BSD-3-Clause","url":"https://codeload.github.com/webmproject/libvpx/tar.gz/refs/tags/v1.15.2","sha256":"26fcd3db88045dee380e581862a6ef106f49b74b6396ee95c2993a260b4636aa"},
+    {"name":"opus","version":"1.5.2","commit":"ddbe48383984d56acd9e1ab6a090c54ca6b735a6","license":"BSD-3-Clause","url":"https://codeload.github.com/xiph/opus/tar.gz/refs/tags/v1.5.2","sha256":"9480e329e989f70d69886ded470c7f8cfe6c0667cc4196d4837ac9e668fb7404"}
+  ],
+  "patches": [],
+  "buildScript":"tools/Build-Media.sh",
+  "toolchain":"Ubuntu 24.04 gcc-mingw-w64-x86-64-posix, nasm, GNU make/autotools; compiler runtime uses GCC Runtime Library Exception"
+}

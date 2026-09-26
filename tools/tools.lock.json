@@ -4,34 +4,46 @@
     {
       "name": "yt-dlp",
       "version": "2026.08.19",
-      "url": "https://github.com/yt-dlp/yt-dlp/releases/download/2026.08.19/yt-dlp.exe",
-      "sha256": "66674953fe251b89f4d08c5f0e35e0728679bd67ab3d7d05c0562af101dd3e7a",
+      "kind": "zipimport",
+      "url": "https://github.com/yt-dlp/yt-dlp/releases/download/2026.08.19/yt-dlp",
+      "sha256": "1fa6733c37ea6fb51c99ad8fe785e7b7e5f3246c9b980230329d4fb72ed8d4d6",
       "source": "https://github.com/yt-dlp/yt-dlp/releases/tag/2026.08.19",
-      "license": "GPL-3.0-or-later"
+      "license": "Unlicense AND ISC AND MIT"
     },
     {
-      "name": "deno",
-      "version": "v2.9.7",
-      "url": "https://github.com/denoland/deno/releases/download/v2.9.7/deno-x86_64-pc-windows-msvc.zip",
-      "sha256": "a0c3101b4158d1dfb7d6a78a7bf0f3de80c96bb423c152beec8beb22786f2238",
-      "source": "https://github.com/denoland/deno/releases/tag/v2.9.7",
-      "license": "MIT"
+      "name": "python",
+      "version": "3.14.7",
+      "kind": "python-embedded",
+      "url": "https://www.python.org/ftp/python/3.14.7/python-3.14.7-embed-amd64.zip",
+      "sha256": "d297e5ff019966817ad8502465176139f2d3d840fa4ed84b13bed399a6ab1f15",
+      "source": "https://github.com/python/cpython/tree/v3.14.7",
+      "license": "PSF-2.0 AND bundled permissive component licenses; Microsoft VC runtime redistribution terms"
+    },
+    {
+      "name": "node",
+      "version": "v24.21.0",
+      "url": "https://nodejs.org/dist/v24.21.0/node-v24.21.0-win-x64.zip",
+      "sha256": "158f7685b44de51f6c0df1d153526cbcd3e1bc739a8dfc607721cef75de9e541",
+      "source": "https://github.com/nodejs/node/tree/v24.21.0",
+      "license": "MIT AND bundled component licenses in node-LICENSE"
     },
     {
       "name": "N_m3u8DL-RE",
       "version": "v0.6.0-beta",
-      "url": "https://github.com/nilaoda/N_m3u8DL-RE/releases/download/v0.6.0-beta/N_m3u8DL-RE_v0.6.0-beta_win-x64_20260629.zip",
-      "sha256": "3825fd42ee502f98a9378f6fdddb2f7822709f521806214f466db6935c950f1a",
+      "localArchive": "vendor/streaming-tools.zip",
+      "url": "https://github.com/nilaoda/N_m3u8DL-RE/tree/v0.6.0-beta",
+      "sha256": "d73b73d6b6e1e476e52692d42160db0e13ba0de2504a4840d17cd09e036232be",
       "source": "https://github.com/nilaoda/N_m3u8DL-RE/releases/tag/v0.6.0-beta",
-      "license": "MIT"
+      "license": "MIT AND .NET runtime bundled notices"
     },
     {
       "name": "ffmpeg",
       "version": "9.0.2",
-      "url": "https://github.com/GyanD/codexffmpeg/releases/download/9.0.2/ffmpeg-9.0.2-essentials_build.zip",
-      "sha256": "60f467265b1e312373dbcd92200c2618a74850f98d3d078e94296bb3fa2047ba",
-      "source": "https://github.com/GyanD/codexffmpeg/releases/tag/9.0.2",
-      "license": "GPL-3.0-or-later"
+      "url": "https://github.com/tanaka-note/mp4-downloader-windows/actions/runs/36230644827",
+      "sha256": "b7ae979db47659f3c47508fe17fb01ebd01e09bb06e6200b9089495dd3367431",
+      "source": "https://github.com/FFmpeg/FFmpeg/tree/n9.0.2",
+      "license": "GPL-3.0-or-later",
+      "localArchive": "vendor/media-tools.zip"
     }
   ]
 }

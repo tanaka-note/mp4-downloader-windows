@@ -1,4 +1,5 @@
 <Solution>
+ <Configurations><Platform Name="x64" /></Configurations>
  <Folder Name="/src/">
   <Project Path="src/Mp4Downloader.Core/Mp4Downloader.Core.csproj" />
   <Project Path="src/Mp4Downloader.Infrastructure/Mp4Downloader.Infrastructure.csproj" />

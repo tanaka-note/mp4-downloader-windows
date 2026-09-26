@@ -1,0 +1,8 @@
+* text=auto eol=lf
+*.zip binary
+*.png binary
+*.ico binary
+# Preserve upstream legal text and compiler records, including original whitespace.
+licenses/** -whitespace
+THIRD_PARTY_LICENSES.txt -whitespace
+tools/media-provenance/** -whitespace
