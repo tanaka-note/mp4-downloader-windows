@@ -1,0 +1,11 @@
+<Solution>
+ <Folder Name="/src/">
+  <Project Path="src/Mp4Downloader.Core/Mp4Downloader.Core.csproj" />
+  <Project Path="src/Mp4Downloader.Infrastructure/Mp4Downloader.Infrastructure.csproj" />
+  <Project Path="src/Mp4Downloader.App/Mp4Downloader.App.csproj" />
+ </Folder>
+ <Folder Name="/tests/">
+  <Project Path="tests/Mp4Downloader.Core.Tests/Mp4Downloader.Core.Tests.csproj" />
+  <Project Path="tests/Mp4Downloader.IntegrationTests/Mp4Downloader.IntegrationTests.csproj" />
+ </Folder>
+</Solution>
