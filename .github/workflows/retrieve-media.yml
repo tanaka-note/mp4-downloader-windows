@@ -1,0 +1,28 @@
+name: Preserve compiled media artifact
+on:
+  push:
+    paths: ['.github/workflows/retrieve-media.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+jobs:
+  preserve:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: 36229247717
+          name: media-tools
+          path: artifacts/retrieved-media
+      - name: Preserve verified compilation as a Git object
+        run: |
+          mkdir -p tools/vendor
+          cp artifacts/retrieved-media/media-tools.zip tools/vendor/media-tools.zip
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add tools/vendor/media-tools.zip
+          git commit -m 'Preserve fixed-source media compilation'
+          git push origin HEAD:refs/heads/codex/generated-media-tools
