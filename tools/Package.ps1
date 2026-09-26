@@ -3,6 +3,7 @@ $ErrorActionPreference='Stop'
 $root=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $published=[IO.Path]::GetFullPath($PublishDirectory)
 $policy=Get-Content -LiteralPath (Join-Path $PSScriptRoot 'release-policy.json') -Raw | ConvertFrom-Json
+if(Test-Path -LiteralPath (Join-Path $published 'tools/bin')) {throw 'Stale nested tool directory: publish into an empty output directory before packaging'}
 if($ForRelease -and !$policy.publicRedistributionApproved) { throw ('Public release blocked: ' + ($policy.blockers -join ' ')) }
 foreach($file in @('Mp4Downloader.App.exe','Mp4Downloader.App.pri','Microsoft.UI.Xaml.dll','README.md','LICENSE','THIRD_PARTY_NOTICES.md','tools/ffmpeg.exe','tools/ffprobe.exe','tools/yt-dlp.exe','tools/deno.exe','tools/N_m3u8DL-RE.exe','tools/binary-hashes.json')) {
  if(!(Test-Path -LiteralPath (Join-Path $published $file))) { throw "Package file missing: $file" }

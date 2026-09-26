@@ -42,12 +42,21 @@ internal static class SelfTest
    if (!missingHandled) throw new InvalidOperationException("Missing Runtime diagnostic unexpectedly succeeded.");
    var vault = new AuthVault(); using var http = new HttpTransport(vault, allowPrivateNetwork: true); var manifests = new ManifestResolver(http);
    var discovered = false;
+   bool? privateBrowserBlocked = null;
    if (!elevated)
    {
     browser = new BrowserWindow(); browser.Activate();
     var candidates = await browser.ResolveAsync(environment, basis, http, manifests, vault, timeout.Token, fixtureMode: true);
     if (candidates.Count != 1 || candidates[0].Kind != MediaKind.Direct) throw new InvalidOperationException("Dynamic browser discovery failed.");
     discovered = true;
+    browser.Close();
+    using var proxy = new PublicNetworkProxy();
+    var guardedEnvironment = await CoreWebView2Environment.CreateWithOptionsAsync(null, Path.Combine(root,"GuardedBrowser"),
+     new CoreWebView2EnvironmentOptions { AdditionalBrowserArguments = $"--proxy-server={proxy.Address.AbsoluteUri} --proxy-bypass-list=<-loopback>" });
+    browser = new BrowserWindow(); browser.Activate();
+    var blocked = await browser.ResolveAsync(guardedEnvironment, basis, http, manifests, vault, timeout.Token, fixtureMode: true);
+    if (blocked.Count != 0) throw new InvalidOperationException("Browser proxy failed to block loopback fixture.");
+    privateBrowserBlocked = true;
    }
    using var storage = new JobStorage(Path.Combine(root, "Pipeline"));
    var scan = new TrackingScanner(new DefenderScanner(runner));
@@ -57,7 +66,7 @@ internal static class SelfTest
    var safeSave = scan.Verdict.HasValue && (scan.Verdict == ScanVerdict.Clean ? outcome.Stage == JobStage.Completed && outcome.SavedPath is not null : outcome.Stage == JobStage.Failed && outcome.SavedPath is null);
    if (!safeSave || Directory.EnumerateDirectories(Path.Combine(storage.Root, "Jobs")).Any()) throw new InvalidOperationException("Pipeline safe-save or cleanup failed.");
    server.Close(); await serving;
-   await File.WriteAllTextAsync(report, JsonSerializer.Serialize(new { Startup = true, Media = true, WebView2DynamicDiscovery = discovered, BrowserSkippedElevated = elevated, MissingRuntimeHandled = missingHandled, Runtime = environment.BrowserVersionString,
+   await File.WriteAllTextAsync(report, JsonSerializer.Serialize(new { Startup = true, Media = true, WebView2DynamicDiscovery = discovered, BrowserProxyBlocksPrivate = privateBrowserBlocked, BrowserSkippedElevated = elevated, MissingRuntimeHandled = missingHandled, Runtime = environment.BrowserVersionString,
     SafeSave = safeSave, Defender = scan.Verdict.ToString(), PipelineOutcome = outcome.Stage.ToString(), TempCleanup = true }));
   }
   catch (Exception ex)

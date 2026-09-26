@@ -14,7 +14,7 @@
 | 公開HTMLページ | W3Schools HTML videoページ。yt-dlpは2件のplaylistとして解析し、仕様通り一括取得を拒否。静的HTMLへfallbackし、診断用selectorの明示的な最初の候補選択で取得・Defender・保存成功。yt-dlp単独成功とは扱わない |
 | 制御した実HTTP | loopback TCPサーバーで10ケース成功：拡張子なし、redirect、危険なContent-Disposition、query、Range、Rangeなし、chunked、拡張子不一致、曖昧なMIME、34MiB。公開サイト試験とは別区分 |
 | MP4変換 | 実FFmpeg/ffprobeでMP4/MKV/TS/MOV/WebM/WMV、片側変換、全変換、silent video、破損/HDR/audio-only停止を自動テスト |
-| ローカルpublish起動 | 通常権限のデスクトップでWinUI起動、動的WebView2検出、欠落Runtime指定の初期化失敗、Direct取得、実Defender Clean、保存・Temp cleanup成功 |
+| ローカルpublish起動 | 通常権限のデスクトップでWinUI起動、動的WebView2検出、ブラウザproxy経由のprivate peer接続拒否、欠落Runtime指定の初期化失敗、Direct取得、実Defender Clean、保存・Temp cleanup成功 |
 | 署名 | CurrentUser/LocalMachineのコード署名証明書を確認、利用可能な証明書なし。アプリEXEはNotSigned |
 
 公開素材は少数回の代表確認に限定し、CIでは繰り返し取得しない。URL全文・Cookie・Authorization・tokenを一般ログや履歴へ保存しない。検証用の固定公開URLと実行手順はvalidation harnessにある。元の素材は同梱配布しない。
