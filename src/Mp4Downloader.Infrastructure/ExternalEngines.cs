@@ -23,7 +23,9 @@ public sealed class YtDlpResolver(ToolCatalog tools, ProcessRunner processes, Ma
  public string Name => "yt-dlp";
  public async Task<IReadOnlyList<PlaybackCandidate>> ResolveAsync(Uri page, CancellationToken ct)
  {
-  var args = YtArguments.Base(tools).Concat(["--dump-single-json", "--skip-download", "--format", "bestvideo+bestaudio/best", "--", page.AbsoluteUri]);
+  _ = await NetworkPolicy.PublicAddressesAsync(page.IdnHost,ct);
+  using var proxy = new PublicNetworkProxy();
+  var args = YtArguments.Base(tools).Concat(["--proxy", proxy.Address.AbsoluteUri, "--dump-single-json", "--skip-download", "--format", "bestvideo+bestaudio/best", "--", page.AbsoluteUri]);
   ProcessResult result;
   try { result = await processes.RunAsync(tools.Find("yt-dlp"), args, workingDirectory(), TimeSpan.FromMinutes(2), ct); }
   catch (DownloadFailure ex) when (ex.Code == FailureCode.Tool) { throw new DownloadFailure(FailureCode.Network, "サイト解析を完了できませんでした。"); }
@@ -83,11 +85,12 @@ public sealed class YtDlpDownloadEngine(ToolCatalog tools, ProcessRunner process
  public async Task<AcquisitionResult> DownloadAsync(AcquisitionPlan plan, string directory, IProgress<JobProgress> progress, CancellationToken ct)
  {
   if (plan.Candidate.Kind != MediaKind.Direct || plan.Candidate.AuthContextId is not null) throw new DownloadFailure(FailureCode.Unsupported, "この経路では認証付き取得を行えません。");
+  using var proxy = new PublicNetworkProxy();
   var files = new List<string>();
   foreach (var track in plan.Candidate.Tracks)
   {
    var path = Path.Combine(directory, $"track-{files.Count}.media");
-   var args = YtArguments.Base(tools).Concat(["--use-extractors", "generic", "--downloader", "native", "--no-part", "--no-write-info-json", "--no-write-playlist-metafiles", "--no-write-thumbnail", "--no-write-subs", "--output", path, "--", track.Url.AbsoluteUri]);
+   var args = YtArguments.Base(tools).Concat(["--proxy", proxy.Address.AbsoluteUri, "--use-extractors", "generic", "--downloader", "native", "--no-part", "--no-write-info-json", "--no-write-playlist-metafiles", "--no-write-thumbnail", "--no-write-subs", "--output", path, "--", track.Url.AbsoluteUri]);
    var result = await processes.RunAsync(tools.Find("yt-dlp"), args, directory, TimeSpan.FromHours(6), ct);
    if (result.ExitCode != 0 || !File.Exists(path) || new FileInfo(path).Length == 0) throw new DownloadFailure(FailureCode.Network, "補助Engineで動画を取得できませんでした。");
    files.Add(path);
@@ -95,7 +98,7 @@ public sealed class YtDlpDownloadEngine(ToolCatalog tools, ProcessRunner process
   return new(files, Name, true, plan.Candidate.Duration);
  }
 }
-public sealed class ManifestDownloadEngine(ToolCatalog tools, ProcessRunner processes) : IDownloadEngine
+public sealed class ManifestDownloadEngine(ToolCatalog tools, ProcessRunner processes, bool allowPrivateNetwork = false) : IDownloadEngine
 {
  public string Name => "N_m3u8DL-RE";
  public async Task<AcquisitionResult> DownloadAsync(AcquisitionPlan plan, string directory, IProgress<JobProgress> progress, CancellationToken ct)
@@ -104,6 +107,7 @@ public sealed class ManifestDownloadEngine(ToolCatalog tools, ProcessRunner proc
   if (plan.Candidate.AuthContextId is not null) throw new DownloadFailure(FailureCode.Unsupported, "外部Engineへの認証情報転送は行いません。");
   if (ManifestPrivacy.RequiresMemory(plan.Candidate)) throw new DownloadFailure(FailureCode.Unsupported, "機密URLを含むManifestを外部Engineへ渡せません。");
   var files = new List<string>();
+  using var proxy = allowPrivateNetwork ? null : new PublicNetworkProxy();
   var sources = plan.Candidate.Kind == MediaKind.Dash ? new[] { plan.Candidate.Snapshot! } : plan.Candidate.Tracks.Select(t => t.Manifest!).ToArray();
   for (var i = 0; i < sources.Length; i++)
   {
@@ -114,6 +118,7 @@ public sealed class ManifestDownloadEngine(ToolCatalog tools, ProcessRunner proc
    await File.WriteAllTextAsync(manifest, sources[i], ct);
    var args = new List<string> { manifest, "--save-dir", work, "--tmp-dir", Path.Combine(work, "segments"), "--save-name", "acquired", "--no-log", "--write-meta-json", "false",
     "--check-segments-count", "true", "--thread-count", "4", "--download-retry-count", "2", "--http-request-timeout", "20", "--disable-update-check", "--auto-select", "--drop-subtitle", "all", "--ffmpeg-binary-path", tools.Find("ffmpeg") };
+   if(proxy is not null) args.AddRange(["--custom-proxy",proxy.Address.AbsoluteUri]);
    var result = await processes.RunAsync(tools.Find("N_m3u8DL-RE"), args, work, TimeSpan.FromHours(6), ct);
    if (result.ExitCode != 0) throw new DownloadFailure(FailureCode.Network, "Streaming動画を取得できませんでした。");
    var output = Directory.EnumerateFiles(work).Where(p => Path.GetExtension(p).ToLowerInvariant() is ".mp4" or ".m4a" or ".ts" or ".mkv" or ".aac").ToArray();

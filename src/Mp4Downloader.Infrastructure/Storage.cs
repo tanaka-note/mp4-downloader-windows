@@ -11,7 +11,7 @@ public static class SafeFileName
 {
  public static string Base(string? title)
  {
-  var name = Regex.Replace(title ?? "", "[\\x00-\\x1f<>:\"/\\\\|?*]", "_").Trim().TrimEnd('.', ' ');
+  var name = Regex.Replace(PrivacyText.Redact(title ?? ""), "[\\x00-\\x1f<>:\"/\\\\|?*]", "_").Trim().TrimEnd('.', ' ');
   if (name.Length > 100) { name = name[..100]; if (char.IsHighSurrogate(name[^1])) name = name[..^1]; }
   if (name.Length == 0) name = "video";
   if (Regex.IsMatch(name.Split('.')[0], "^(CON|PRN|AUX|NUL|COM[0-9¹²³]|LPT[0-9¹²³])$", RegexOptions.IgnoreCase)) name = "_" + name;
@@ -29,6 +29,7 @@ public sealed class JobStorage : IJobStorage, IDisposable
  {
   this.volumeIdentity = volumeIdentity ?? VolumeId;
   Root = Path.GetFullPath(root ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "TanakaNote", "Mp4Downloader"));
+  LocalPathPolicy.Validate(Root);
   Directory.CreateDirectory(Path.Combine(Root, "Jobs"));
  }
  public string CreateJob(Guid id)
@@ -40,6 +41,7 @@ public sealed class JobStorage : IJobStorage, IDisposable
  }
  public void EnsureSpace(string jobDirectory, string destination, long requiredBytes)
  {
+  LocalPathPolicy.Validate(destination);
   Directory.CreateDirectory(destination);
   foreach (var location in new[] { jobDirectory, destination }.DistinctBy(Path.GetPathRoot))
   {
@@ -50,6 +52,7 @@ public sealed class JobStorage : IJobStorage, IDisposable
  public async Task<string> CommitAsync(string path, string destination, string title, CancellationToken ct)
  {
   destination = Path.GetFullPath(destination);
+  LocalPathPolicy.Validate(destination);
   Directory.CreateDirectory(destination);
   var staged = Path.Combine(destination, $".mp4-downloader-{Guid.NewGuid():N}.partial");
   if (destination.StartsWith(@"\\", StringComparison.Ordinal)) throw new DownloadFailure(FailureCode.Save, "初期版の保存先はローカルドライブを指定してください。");
@@ -81,7 +84,11 @@ public sealed class JobStorage : IJobStorage, IDisposable
    }
    throw new DownloadFailure(FailureCode.Save, "一意な保存名を作成できませんでした。");
   }
-  finally { if (File.Exists(staged)) File.Delete(staged); if (stageRecord is not null && File.Exists(stageRecord)) File.Delete(stageRecord); }
+  finally
+  {
+   var removed = TryDelete(staged);
+   if (removed && stageRecord is not null) TryDelete(stageRecord);
+  }
  }
  public async Task RecordAsync(HistoryEntry entry, CancellationToken ct)
  {
@@ -104,7 +111,7 @@ public sealed class JobStorage : IJobStorage, IDisposable
   try { return JsonSerializer.Deserialize<List<HistoryEntry>>(await File.ReadAllTextAsync(path, ct)) ?? []; }
   catch (JsonException) { return []; }
  }
- private static string SanitizeTitle(string title) => Regex.Replace(title.Length > 300 ? title[..300] : title, @"https?://\S+|(?i)(token|authorization|cookie|password)\s*[:=]\s*\S+", "[非保存]");
+ private static string SanitizeTitle(string title) => PrivacyText.Redact(title);
  public void ClearHistory() { var path = Path.Combine(Root, "history.json"); if (File.Exists(path)) File.Delete(path); }
  public async Task CleanupAsync(string directory)
  {
@@ -117,7 +124,7 @@ public sealed class JobStorage : IJobStorage, IDisposable
    try
    {
     RecoverStage(full);
-    if (Directory.Exists(full) && (File.GetAttributes(full) & FileAttributes.ReparsePoint) == 0) Directory.Delete(full, true);
+    if (Directory.Exists(full)) DeleteOwnedTree(full);
     return;
    }
    catch (IOException) { await Task.Delay(100 * (attempt + 1)); }
@@ -151,9 +158,22 @@ public sealed class JobStorage : IJobStorage, IDisposable
   string? stage;
   try { stage = JsonSerializer.Deserialize<string>(File.ReadAllText(record)); }
   catch (JsonException) { return; }
-  if (stage is not null && Path.IsPathFullyQualified(stage) && Regex.IsMatch(Path.GetFileName(stage), @"^\.mp4-downloader-[a-f0-9]{32}\.partial$") && File.Exists(stage) && (File.GetAttributes(stage) & FileAttributes.ReparsePoint) == 0) File.Delete(stage);
+  if (stage is not null && Path.IsPathFullyQualified(stage) && Regex.IsMatch(Path.GetFileName(stage), @"^\.mp4-downloader-[a-f0-9]{32}\.partial$") && File.Exists(stage))
+  { try { LocalPathPolicy.Validate(stage); } catch (DownloadFailure) { return; } File.Delete(stage); }
  }
- private static string VolumeId(string path)
+ private static bool TryDelete(string path)
+ {
+  try { if (File.Exists(path)) File.Delete(path); return true; }
+  catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return false; }
+ }
+ private static void DeleteOwnedTree(string directory)
+ {
+  if ((File.GetAttributes(directory) & FileAttributes.ReparsePoint) != 0) { Directory.Delete(directory); return; }
+  foreach (var child in Directory.EnumerateDirectories(directory)) DeleteOwnedTree(child);
+  foreach (var file in Directory.EnumerateFiles(directory)) File.Delete(file);
+  Directory.Delete(directory);
+ }
+ public static string VolumeId(string path)
  {
   if (!OperatingSystem.IsWindows()) return Path.GetPathRoot(Path.GetFullPath(path))!;
   var mount = new StringBuilder(512); var name = new StringBuilder(512);
@@ -163,4 +183,22 @@ public sealed class JobStorage : IJobStorage, IDisposable
  }
  [DllImport("kernel32.dll", CharSet = CharSet.Unicode)] private static extern bool GetVolumePathNameW(string path, StringBuilder mount, int length);
  [DllImport("kernel32.dll", CharSet = CharSet.Unicode)] private static extern bool GetVolumeNameForVolumeMountPointW(string mount, StringBuilder name, int length);
+}
+
+public static class LocalPathPolicy
+{
+ public static void Validate(string path)
+ {
+  var full = Path.GetFullPath(path);
+  if (full.StartsWith(@"\\", StringComparison.Ordinal) || !Path.IsPathFullyQualified(full))
+   throw new DownloadFailure(FailureCode.Save, "保存先はローカルドライブのフォルダを指定してください。");
+  for (var current = full; current is not null; current = Path.GetDirectoryName(current))
+   if ((Directory.Exists(current) || File.Exists(current)) && (File.GetAttributes(current) & FileAttributes.ReparsePoint) != 0)
+    throw new DownloadFailure(FailureCode.Save, "リンクまたはjunctionを含む保存先・作業領域には対応していません。");
+ }
+}
+
+public static class PrivacyText
+{
+ public static string Redact(string text) => Regex.Replace(text.Length > 300 ? text[..300] : text, @"https?://\S+|(?i)(token|authorization|cookie|password|credential|signature|session)\s*[:=]\s*\S+", "[非保存]");
 }

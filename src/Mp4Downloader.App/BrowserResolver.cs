@@ -8,17 +8,21 @@ using System.Text.Json;
 
 namespace Mp4Downloader.App;
 
-public sealed class BrowserResolver(Window owner, HttpTransport http, ManifestResolver manifests, AuthVault vault, string profile) : IResolver
+public sealed class BrowserResolver(Window owner, HttpTransport http, ManifestResolver manifests, AuthVault vault, string profile, Uri proxy) : IResolver
 {
  public string Name => "WebView2";
  public async Task<IReadOnlyList<PlaybackCandidate>> ResolveAsync(Uri page, CancellationToken ct)
  {
+  _ = await NetworkPolicy.PublicAddressesAsync(page.IdnHost,ct);
   CoreWebView2Environment environment;
-  try { environment = await CoreWebView2Environment.CreateWithOptionsAsync(null, profile, null); }
+  try { environment = await CoreWebView2Environment.CreateWithOptionsAsync(null, profile, new CoreWebView2EnvironmentOptions { AdditionalBrowserArguments = $"--proxy-server={proxy.AbsoluteUri} --proxy-bypass-list=<-loopback>" }); }
   catch (Exception) { throw new DownloadFailure(FailureCode.Tool, "WebView2 Runtimeが利用できません。設定のMicrosoft公式導入案内を確認してください。"); }
   var window = new BrowserWindow();
   window.Activate();
   try { return await window.ResolveAsync(environment, page, http, manifests, vault, ct); }
+  catch (OperationCanceledException) { throw; }
+  catch (DownloadFailure) { throw; }
+  catch (Exception) { throw new DownloadFailure(FailureCode.Tool, "WebView2の初期化またはページ解析に失敗しました。Runtimeを修復・更新してください。"); }
   finally { window.Close(); owner.Activate(); }
  }
 }
@@ -54,6 +58,26 @@ public sealed class BrowserWindow : Window
   core.Settings.IsGeneralAutofillEnabled = false;
   core.Settings.AreHostObjectsAllowed = false;
   core.Settings.IsWebMessageEnabled = false;
+  if (!fixtureMode)
+  {
+   core.AddWebResourceRequestedFilter("*", CoreWebView2WebResourceContext.All);
+   core.WebResourceRequested += async (sender, e) =>
+   {
+    var deferral = e.GetDeferral();
+    try
+    {
+     var uri = UrlPolicy.Parse(e.Request.Uri);
+     using var deadline = CancellationTokenSource.CreateLinkedTokenSource(ct); deadline.CancelAfter(TimeSpan.FromSeconds(5));
+     _ = await NetworkPolicy.PublicAddressesAsync(uri.IdnHost,deadline.Token);
+    }
+    catch (Exception)
+    {
+     try { e.Response = environment.CreateWebResourceResponse(null,403,"Local network access blocked","Content-Type: text/plain"); }
+     catch (Exception) { /* Browser may already be closing. */ }
+    }
+    finally { try { deferral.Complete(); } catch (Exception) { /* Browser may already be closed. */ } }
+   };
+  }
   core.PermissionRequested += (_, e) => e.State = CoreWebView2PermissionState.Deny;
   core.DownloadStarting += (_, e) => e.Cancel = true;
   core.NewWindowRequested += (_, e) => { e.Handled = true; notice.Text = "新しいウィンドウを要求するページはこの解析画面では開けません。"; };

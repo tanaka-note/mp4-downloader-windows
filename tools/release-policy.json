@@ -1,0 +1,8 @@
+{
+ "version": "0.1.0",
+ "publicRedistributionApproved": false,
+ "blockers": [
+  "Exact corresponding source, dependency versions and build scripts for the pinned GPL FFmpeg binary have not been assembled.",
+  "Exact yt-dlp bundled dependency source and all runtime dependency notices have not yet been verified for redistribution."
+ ]
+}

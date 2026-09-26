@@ -1,6 +1,6 @@
-# MP4 Downloader v0.2
+# MP4 Downloader — v0.1 release candidate (v0.2 internal design)
 
-Status: implementation branch; no production release, no automatic merge. Company/product identifiers: TanakaNote / Mp4Downloader. Windows 11 x64, standard user only.
+Status: release validation branch. Merge/public Release are authorized only after all gates, including corresponding-source obligations, pass. Public redistribution remains blocked by tools/release-policy.json. Company/product identifiers: TanakaNote / Mp4Downloader. Windows 11 x64, standard user only.
 
 ## Product and isolation
 
@@ -25,7 +25,7 @@ N_m3u8DL-RE upstream currently offers a beta-tagged release, not a stable-tagged
 
 ## Packaging
 
-Unpackaged folder, self-contained .NET and Windows App SDK, win-x64; no installer or elevation required. WebView2 Evergreen is detected when the browser resolver is invoked; missing runtime produces an error with Microsoft installation guidance in Settings. The app does not install it or change Defender settings. Publish is a local validation output, not a GitHub Release.
+Unpackaged folder, self-contained .NET and Windows App SDK, win-x64; no installer or elevation required. WebView2 Evergreen is detected when the browser resolver is invoked; missing runtime produces an error with Microsoft installation guidance in Settings. The app does not install it or change Defender settings. Distribution unit: a ZIP containing the whole publish directory, not a single EXE. PublishSingleFile=false, PublishTrimmed=false, PublishReadyToRun=false, SelfContained=true, RuntimeIdentifier=win-x64. Public packaging fails while the license policy is false.
 
 ## Dependency direction and responsibilities
 
@@ -39,7 +39,7 @@ Resolving -> optional Selecting -> Downloading -> Probing -> Normalizing -> Vali
 
 Resolver order: input classification/Direct, Manifest, yt-dlp, static HTML, WebView2. Direct manifest inputs skip the Direct media probe. A viable candidate needs main-playback evidence and an acquisition plan; incomplete candidates proceed to the next resolver. Ambiguous candidates require explicit selection. HTML parses video/source elements only; arbitrary JavaScript scraping is deliberately excluded.
 
-Direct uses HttpClient. Trusted parallel ranges require known size, a strong ETag, identity encoding and a valid 206 probe. Connection upper bounds are 1/4/8/16 for <32MiB/32MiB/256MiB/1GiB. Every chunk checks byte range, length, total and ETag. All chunks are discarded before single-stream restart on range failure. A 429 reduces effective concurrency to one and respects bounded Retry-After; an excessive delay stops without an early retry. Connection/5xx retries are bounded. Single-stream retries restart from zero. Different candidates/engines never share partial files.
+Direct uses HttpClient. Trusted parallel ranges require known size, a strong ETag, identity encoding and a valid 206 probe. Connection upper bounds are 1/4/8/16 for <32MiB/32MiB/256MiB/1GiB. Every chunk checks byte range, length, total and ETag. All chunks are discarded before single-stream restart on range failure. A 429 reduces effective concurrency to one and respects bounded Retry-After; an excessive delay stops without an early retry. Connection/5xx retries are bounded. Single-stream retries restart from zero. Different candidates/engines never share partial files. Production HTTP connections disable implicit system proxying and validate DNS answers plus the actual connected IP. Local/private, link-local and special-use peers are refused. Test-only loopback transports are explicit.
 
 N_m3u8DL-RE is the primary public HLS/DASH acquisition engine. It receives locally snapshotted, validated clear manifests, disables logs/metadata, checks segment counts, excludes subtitles and uses bounded connections. No key/decryption tool options are constructed. Authenticated HLS uses the internal HTTP engine; authenticated DASH is unsupported until external redirect/credential safety is verified. Internal HLS supports clear VOD TS/fMP4 with a single map and no byte ranges/discontinuities; advanced clear playlists use N_m3u8DL-RE.
 
@@ -51,7 +51,7 @@ Protection: known DRM stops; HLS encryption is a different unsupported result. L
 
 ## Browser and authentication
 
-Dedicated profile: %LOCALAPPDATA%/TanakaNote/Mp4Downloader/WebView2. Password autosave/general autofill disabled. No elevated browser, host object, web-message native proxy, arbitrary download or permission grant. Current host is visible. User performs login/playback and asks the app to inspect candidates. HTTP currentSrc and manifest responses are used; blob/MSE fragment URLs are never treated as complete direct files. Network candidates alone do not prove a direct main video. No large response body capture.
+Dedicated profile: %LOCALAPPDATA%/TanakaNote/Mp4Downloader/WebView2. Password autosave/general autofill disabled. No elevated browser, host object, web-message native proxy, arbitrary download or permission grant. Current host is visible. User performs login/playback and asks the app to inspect candidates. HTTP currentSrc and manifest responses are used; blob/MSE fragment URLs are never treated as complete direct files. Network candidates alone do not prove a direct main video. No large response body capture. Normal browser traffic uses an app-lifetime loopback filtering proxy; private resource requests are also denied before sending. The proxy tunnels TLS without decryption, validates actual public-IP peers, limits headers/concurrency and only allows ports 80/443. yt-dlp and N_m3u8DL-RE also use this proxy, including redirects; no raw proxy headers/URLs are logged.
 
 Transient credentials reside in AuthVault. Cookie Domain/Path/Secure/expiry are enforced by CookieContainer. Authorization is origin-bound, reevaluated at each redirect, never sent to an external engine, and never sent on HTTPS->HTTP downgrade. Source cookies are not copied to unrelated CDNs. No cookie file is needed in the current implementation; a future verified external cookie-file route must use private ACLs, bounded lifetime and crash recovery.
 
@@ -77,10 +77,10 @@ Same volume: rename only after validation and scan. Cross volume: copy to a uniq
 
 History is an allowlist of title, host, filename, size, resolution, duration, engine, processing mode, status, completion time and saved path. No original URL/query, token, cookie, Authorization, passwords or process JSON. Saved paths are local metadata. Keep at most 500 entries; user can clear history/browser data. No automatic job resumption with persisted signed URLs.
 
-Job leases prevent recovery from deleting active jobs. Normal termination cleans up; crashed inactive jobs are recovered on next start. Reparse-point job roots are excluded. Cross-volume destination staging paths are recorded per job so crash recovery can remove only matching app-owned staging filenames. Cleanup errors are retried; OS locks can defer cleanup. Never delete unrelated files.
+Job leases prevent recovery from deleting active jobs. Normal termination cleans up; crashed inactive jobs are recovered on next start. Reparse-point job roots are excluded. Cross-volume destination staging paths are recorded per job so crash recovery can remove only matching app-owned staging filenames. Cleanup errors are retried; OS locks can defer cleanup. Cleanup/history permission errors do not replace the job outcome or leave the coordinator gate locked. Destinations with UNC/device prefixes or reparse-point ancestors are rejected. Owned tree cleanup unlinks child junctions instead of traversing them. Never delete unrelated files.
 
 ## Validation and release gates
 
-Use local HTTP fixtures and short synthetic media for repeatable tests. Real-site support varies with website changes and needs a small representative manual check before a production release. CI restores locked packages, installs hash-pinned tools, tests and publishes the self-contained app. The GUI/WebView2 diagnostic runs separately on a non-elevated local desktop; it is not run unconditionally on hosted Windows runners with different privilege/desktop conditions. There is no merge, deployment or GitHub Release action. Cross-volume copy is tested with injected volume identities; a physical second-volume test is a separate manual check.
+Use local HTTP fixtures and short synthetic media for repeatable tests. Real-site support varies with website changes and needs a small representative manual check before a production release. CI restores locked packages, installs hash-pinned tools, tests and publishes the self-contained app. CI starts the app from the verified, extracted internal ZIP. Hosted elevated runners test WinUI startup, Runtime environment creation, missing-Runtime failure, media, safe-save/fail-closed scan and cleanup; browser playback is explicitly skipped on elevated runners. The non-elevated local desktop tests dynamic WebView2 discovery. A separate isolated 128MiB VHD test compares actual Windows volume IDs and verifies copy/hash/rename/cleanup, not subst. Physical second-drive and third-party-antivirus environments are separate manual checks. No automatic merge or public Release workflow bypasses the license gate. See release-validation.md for executed results.
 
 Before actual public binary distribution, complete corresponding-source/license packaging for all third-party binary dependencies, validate on a clean Windows 11 machine, verify real Defender behavior and representative browser/site flows. See THIRD_PARTY_NOTICES.md. No claims of these checks until actually executed.

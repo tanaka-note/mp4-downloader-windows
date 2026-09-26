@@ -24,6 +24,22 @@ public class CoordinatorTests
   Assert.Equal(JobStage.Completed, outcome.Stage); Assert.Equal(1, storage.Commits); Assert.True(storage.Cleaned);
  }
  [Theory]
+ [InlineData(ScanVerdict.Clean, JobStage.Completed)]
+ [InlineData(ScanVerdict.ScanUnavailable, JobStage.Failed)]
+ public async Task CleanupFailurePreservesOutcomeAndReleasesJobGate(ScanVerdict verdict, JobStage expected)
+ {
+  var storage = new FakeStorage { FailCleanup = true };
+  var coordinator = Build(storage, verdict);
+  try
+  {
+   var first = await coordinator.RunAsync("https://example.invalid/", storage.Root, new Progress<JobProgress>(), default);
+   var second = await coordinator.RunAsync("https://example.invalid/", storage.Root, new Progress<JobProgress>(), default);
+   Assert.Equal(expected, first.Stage); Assert.Equal(expected, second.Stage);
+   if (verdict != ScanVerdict.Clean) Assert.Contains("検査不能", first.Message);
+  }
+  finally { if (Directory.Exists(storage.Root)) Directory.Delete(storage.Root, true); }
+ }
+ [Theory]
  [InlineData(Protection.Drm)] [InlineData(Protection.Encrypted)] [InlineData(Protection.Unknown)]
  public async Task ProtectionStopsBeforeAcquire(Protection protection)
  {
@@ -72,11 +88,11 @@ public class CoordinatorTests
  private sealed class FakeStorage : IJobStorage
  {
   public string Root { get; } = Path.Combine(Path.GetTempPath(), "mp4-coordinator-" + Guid.NewGuid().ToString("N"));
-  public int Commits; public bool Cleaned, FailHistory; public List<HistoryEntry> Entries = [];
+  public int Commits; public bool Cleaned, FailHistory, FailCleanup; public List<HistoryEntry> Entries = [];
   public string CreateJob(Guid id) { Directory.CreateDirectory(Root); return Root; }
   public void EnsureSpace(string jobDirectory, string destination, long requiredBytes) { }
   public Task<string> CommitAsync(string path, string destination, string title, CancellationToken ct) { Commits++; return Task.FromResult(Path.Combine(Root, "fixture.mp4")); }
   public Task RecordAsync(HistoryEntry entry, CancellationToken ct) { if (FailHistory) throw new IOException(); Entries.Add(entry); return Task.CompletedTask; }
-  public Task CleanupAsync(string directory) { if (Directory.Exists(directory)) Directory.Delete(directory, true); Cleaned = true; return Task.CompletedTask; }
+  public Task CleanupAsync(string directory) { if (FailCleanup) throw new IOException("cleanup fixture"); if (Directory.Exists(directory)) Directory.Delete(directory, true); Cleaned = true; return Task.CompletedTask; }
  }
 }

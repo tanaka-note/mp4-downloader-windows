@@ -49,7 +49,7 @@ public class MediaTests
  {
   var f = await fixtures.Value;
   using var server = new FixtureServer(f.Root);
-  using var http = new HttpTransport();
+  using var http = new HttpTransport(allowPrivateNetwork: true);
   var resolver = new ManifestResolver(http);
   var candidates = await resolver.ResolveAsync(new(server.Base, name), default);
   var candidate = Assert.Single(candidates);
@@ -57,7 +57,7 @@ public class MediaTests
   var job = Path.Combine(f.Root, Guid.NewGuid().ToString("N")); Directory.CreateDirectory(job);
   try
   {
-   IDownloadEngine downloader = engine == "HlsHttp" ? new HlsDownloadEngine(http) : new ManifestDownloadEngine(f.Tools, f.Processes);
+   IDownloadEngine downloader = engine == "HlsHttp" ? new HlsDownloadEngine(http) : new ManifestDownloadEngine(f.Tools, f.Processes, allowPrivateNetwork: true);
    var acquired = await downloader.DownloadAsync(new(candidate, engine), job, new Progress<JobProgress>(), default);
    var result = await f.Pipeline.NormalizeAsync(acquired, job, new Progress<JobProgress>(), default);
    Assert.True(Mp4Planner.Compatible(result.Media)); Assert.NotNull(result.Media.Audio); Assert.InRange(result.Media.Video!.Duration, 2.9, 3.2);
@@ -67,7 +67,7 @@ public class MediaTests
  [Fact] public async Task HlsMasterPairsExternalAudioAndRejectsMissingSegments()
  {
   var f = await fixtures.Value;
-  using var server = new FixtureServer(f.Root); using var http = new HttpTransport();
+  using var server = new FixtureServer(f.Root); using var http = new HttpTransport(allowPrivateNetwork: true);
   var candidates = await new ManifestResolver(http).ResolveAsync(new(server.Base, "master.m3u8"), default);
   Assert.Equal(2, Assert.Single(candidates).Tracks.Count);
   var missing = await new ManifestResolver(http).ResolveAsync(new(server.Base, "missing.m3u8"), default);

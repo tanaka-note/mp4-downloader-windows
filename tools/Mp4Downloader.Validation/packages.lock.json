@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "dependencies": {
+    "net10.0": {
+      "mp4downloader.core": {
+        "type": "Project"
+      },
+      "mp4downloader.infrastructure": {
+        "type": "Project",
+        "dependencies": {
+          "Mp4Downloader.Core": "[1.0.0, )"
+        }
+      }
+    },
+    "net10.0/win-x64": {}
+  }
+}

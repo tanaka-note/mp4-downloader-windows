@@ -35,6 +35,11 @@ public sealed class ProcessRunner
   foreach (var argument in arguments) start.ArgumentList.Add(argument);
   start.Environment["DENO_NO_UPDATE_CHECK"] = "1";
   start.Environment["DENO_NO_PROMPT"] = "1";
+  // PyInstaller and runtime caches must remain in the owned job directory, even when killed.
+  start.Environment["TEMP"] = workingDirectory;
+  start.Environment["TMP"] = workingDirectory;
+  start.Environment["TMPDIR"] = workingDirectory;
+  start.Environment["DENO_DIR"] = Path.Combine(workingDirectory, "deno-cache");
   using var process = new Process { StartInfo = start };
   using var deadline = CancellationTokenSource.CreateLinkedTokenSource(ct);
   deadline.CancelAfter(timeout);

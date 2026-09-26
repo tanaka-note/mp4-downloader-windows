@@ -69,19 +69,19 @@ public sealed class DownloadCoordinator(IReadOnlyList<IResolver> resolvers, ICan
    progress.Report(new(JobStage.Scanning, "Windows Defenderで検査しています"));
    var scan = await scanner.ScanAsync(normalized.Path, ct);
    if (scan != ScanVerdict.Clean)
-    throw new DownloadFailure(FailureCode.Scan, scan == ScanVerdict.ThreatDetected ? "脅威を検出したため保存を中止しました。" : "Windows Defenderによる検査を完了できないため保存を中止しました。");
+    throw new DownloadFailure(FailureCode.Scan, scan == ScanVerdict.ThreatDetected ? "脅威検出：保存を中止しました。" : "検査不能：Windows Defenderによる検査を完了できないため保存を中止しました。");
    ct.ThrowIfCancellationRequested();
    progress.Report(new(JobStage.Saving, "MP4を保存しています"));
    var saved = await storage.CommitAsync(normalized.Path, destination, candidate.Title, ct);
    // Saving is the commit point: history failure must never turn a saved video into a failed download.
-   var notice = "MP4を保存しました。";
+   var notice = "検査済み：MP4を保存しました。";
    try
    {
     await storage.RecordAsync(new(candidate.Title, page.IdnHost, Path.GetFileName(saved), normalized.Media.Size,
      normalized.Media.Video!.Width, normalized.Media.Video.Height, normalized.Media.Video.Duration,
      engine, mode, "成功", DateTimeOffset.Now, saved), CancellationToken.None);
    }
-   catch (IOException) { notice += " 履歴の記録に失敗しました。"; }
+   catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { notice += " 履歴の記録に失敗しました。"; }
    outcome = new(JobStage.Completed, notice, saved);
   }
   catch (OperationCanceledException) { outcome = new(JobStage.Cancelled, "中止しました。"); }
@@ -91,13 +91,14 @@ public sealed class DownloadCoordinator(IReadOnlyList<IResolver> resolvers, ICan
   catch (Exception) { outcome = new(JobStage.Failed, "処理を完了できませんでした。機密情報を含む詳細は記録していません。"); }
   finally
   {
-   if (directory is not null) await storage.CleanupAsync(directory);
-   gate.Release();
+   try { if (directory is not null) await storage.CleanupAsync(directory); }
+   catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { /* Recovery retries on next startup; preserve the job outcome. */ }
+   finally { gate.Release(); }
   }
   if (outcome.Stage != JobStage.Completed && page is not null)
   {
    try { await storage.RecordAsync(new("動画", page.IdnHost, "", 0, 0, 0, 0, engine, mode, outcome.Stage == JobStage.Cancelled ? "中止" : "失敗", DateTimeOffset.Now, null), CancellationToken.None); }
-   catch (IOException) { }
+   catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
   }
   progress.Report(new(outcome.Stage, outcome.Message, outcome.Stage == JobStage.Completed ? 1 : null));
   return outcome;

@@ -15,6 +15,7 @@ public sealed partial class MainWindow : Window, ICandidateSelector
 {
  private readonly JobStorage storage = new(App.TestRoot is null ? null : Path.Combine(App.TestRoot, "AppData"));
  private readonly AuthVault vault = new();
+ private readonly PublicNetworkProxy networkProxy = new();
  private readonly HttpTransport http;
  private readonly DownloadCoordinator coordinator;
  private readonly string browserDirectory;
@@ -32,12 +33,13 @@ public sealed partial class MainWindow : Window, ICandidateSelector
   var processes = new ProcessRunner();
   var manifests = new ManifestResolver(http);
   coordinator = new([new DirectResolver(http), manifests, new YtDlpResolver(tools, processes, manifests, vault, () => storage.ActiveDirectory), new HtmlResolver(http, manifests),
-    new BrowserResolver(this, http, manifests, vault, browserDirectory)], this, new AcquisitionPlanner(),
+    new BrowserResolver(this, http, manifests, vault, browserDirectory, networkProxy.Address)], this, new AcquisitionPlanner(),
    [new DirectDownloadEngine(http), new YtDlpDownloadEngine(tools, processes), new ManifestDownloadEngine(tools, processes), new HlsDownloadEngine(http)],
    new MediaPipeline(tools, processes, new MediaProbe(tools, processes)), new DefenderScanner(processes), storage);
   DestinationBox.Text = LoadDestination();
   Root.Loaded += async (_, _) => { await storage.RecoverAsync(); await RefreshHistoryAsync(); };
   AppWindow.Closing += (_, e) => { if (busy) { e.Cancel = true; closeAfterJob = true; cancellation?.Cancel(); Status.Text = "処理を中止して終了しています"; } };
+  Closed += (_, _) => { networkProxy.Dispose(); http.Dispose(); storage.Dispose(); vault.Clear(); };
  }
  private async void Download_Click(object sender, RoutedEventArgs e)
  {

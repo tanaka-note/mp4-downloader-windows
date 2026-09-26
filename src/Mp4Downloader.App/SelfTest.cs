@@ -13,7 +13,7 @@ namespace Mp4Downloader.App;
 // Explicit diagnostic mode, isolated from normal AppData, loopback only; never reads user browser data.
 internal static class SelfTest
 {
- public static async Task RunAsync(Window main, string root)
+ public static async Task RunAsync(Window main, string root, bool releaseSmoke = false)
  {
   Directory.CreateDirectory(root);
   var report = Path.Combine(root, "self-test.json");
@@ -21,7 +21,8 @@ internal static class SelfTest
   try
   {
    using var identity = WindowsIdentity.GetCurrent();
-   if (new WindowsPrincipal(identity).IsInRole(WindowsBuiltInRole.Administrator)) throw new InvalidOperationException("Diagnostics require a non-elevated user.");
+   var elevated = new WindowsPrincipal(identity).IsInRole(WindowsBuiltInRole.Administrator);
+   if (elevated && !releaseSmoke) throw new InvalidOperationException("Browser diagnostics require a non-elevated user.");
    using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(45));
    var tools = new ToolCatalog(Path.Combine(AppContext.BaseDirectory, "tools")); var runner = new ProcessRunner();
    var video = Path.Combine(root, "fixture.mp4");
@@ -34,10 +35,20 @@ internal static class SelfTest
    var basis = new Uri($"http://127.0.0.1:{port}/"); server.Prefixes.Add(basis.AbsoluteUri); server.Start();
    var serving = ServeAsync(server, video, timeout.Token);
    var environment = await CoreWebView2Environment.CreateWithOptionsAsync(null, Path.Combine(root, "Browser"), null);
-   var vault = new AuthVault(); using var http = new HttpTransport(vault); var manifests = new ManifestResolver(http);
-   browser = new BrowserWindow(); browser.Activate();
-   var candidates = await browser.ResolveAsync(environment, basis, http, manifests, vault, timeout.Token, fixtureMode: true);
-   if (candidates.Count != 1 || candidates[0].Kind != MediaKind.Direct) throw new InvalidOperationException("Dynamic browser discovery failed.");
+   var missingHandled = false;
+   var missingFolder = Path.Combine(root, "MissingRuntime"); Directory.CreateDirectory(missingFolder);
+   try { _ = await CoreWebView2Environment.CreateWithOptionsAsync(missingFolder, Path.Combine(root, "MissingProfile"), null); }
+   catch (Exception) { missingHandled = true; }
+   if (!missingHandled) throw new InvalidOperationException("Missing Runtime diagnostic unexpectedly succeeded.");
+   var vault = new AuthVault(); using var http = new HttpTransport(vault, allowPrivateNetwork: true); var manifests = new ManifestResolver(http);
+   var discovered = false;
+   if (!elevated)
+   {
+    browser = new BrowserWindow(); browser.Activate();
+    var candidates = await browser.ResolveAsync(environment, basis, http, manifests, vault, timeout.Token, fixtureMode: true);
+    if (candidates.Count != 1 || candidates[0].Kind != MediaKind.Direct) throw new InvalidOperationException("Dynamic browser discovery failed.");
+    discovered = true;
+   }
    using var storage = new JobStorage(Path.Combine(root, "Pipeline"));
    var scan = new TrackingScanner(new DefenderScanner(runner));
    var coordinator = new DownloadCoordinator([new DirectResolver(http)], new SingleCandidate(), new AcquisitionPlanner(), [new DirectDownloadEngine(http)],
@@ -46,7 +57,7 @@ internal static class SelfTest
    var safeSave = scan.Verdict.HasValue && (scan.Verdict == ScanVerdict.Clean ? outcome.Stage == JobStage.Completed && outcome.SavedPath is not null : outcome.Stage == JobStage.Failed && outcome.SavedPath is null);
    if (!safeSave || Directory.EnumerateDirectories(Path.Combine(storage.Root, "Jobs")).Any()) throw new InvalidOperationException("Pipeline safe-save or cleanup failed.");
    server.Close(); await serving;
-   await File.WriteAllTextAsync(report, JsonSerializer.Serialize(new { Startup = true, Media = true, WebView2DynamicDiscovery = true, CandidateCount = candidates.Count, Runtime = environment.BrowserVersionString,
+   await File.WriteAllTextAsync(report, JsonSerializer.Serialize(new { Startup = true, Media = true, WebView2DynamicDiscovery = discovered, BrowserSkippedElevated = elevated, MissingRuntimeHandled = missingHandled, Runtime = environment.BrowserVersionString,
     SafeSave = safeSave, Defender = scan.Verdict.ToString(), PipelineOutcome = outcome.Stage.ToString(), TempCleanup = true }));
   }
   catch (Exception ex)

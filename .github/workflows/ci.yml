@@ -23,6 +23,19 @@ jobs:
         run: dotnet build MP4Downloader.slnx -c Release -p:Platform=x64 --no-restore
       - name: Tests
         run: dotnet test MP4Downloader.slnx -c Release -p:Platform=x64 --no-build --logger trx
+      - name: Security-sensitive regression tests
+        run: dotnet test tests/Mp4Downloader.IntegrationTests -c Release --no-build --filter FullyQualifiedName~ReleaseSafetyTests
       - name: Self-contained publish
         shell: pwsh
         run: ./tools/Publish.ps1
+      - name: ZIP package validation
+        shell: pwsh
+        run: ./tools/Package.ps1
+      - name: Published ZIP startup and safe-save smoke
+        shell: pwsh
+        run: ./tools/Smoke-Test.ps1 -PublishDirectory ./artifacts/package-smoke -ReleaseSmoke
+      - name: Restore validation harness
+        run: dotnet restore tools/Mp4Downloader.Validation --locked-mode
+      - name: Distinct virtual-volume save
+        shell: pwsh
+        run: ./tools/Test-VirtualVolume.ps1

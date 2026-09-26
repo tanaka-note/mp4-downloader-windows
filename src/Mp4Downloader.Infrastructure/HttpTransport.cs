@@ -20,10 +20,12 @@ public sealed class HttpTransport : IDisposable
 {
  private readonly HttpClient client;
  private readonly AuthVault vault;
- public HttpTransport(AuthVault? vault = null, HttpMessageHandler? handler = null)
+ public HttpTransport(AuthVault? vault = null, HttpMessageHandler? handler = null, bool allowPrivateNetwork = false)
  {
   this.vault = vault ?? new();
-  client = new(handler ?? new SocketsHttpHandler { AllowAutoRedirect = false, UseCookies = false, AutomaticDecompression = DecompressionMethods.None, ConnectTimeout = TimeSpan.FromSeconds(20) });
+  var sockets = new SocketsHttpHandler { AllowAutoRedirect = false, UseCookies = false, UseProxy = false, AutomaticDecompression = DecompressionMethods.None, ConnectTimeout = TimeSpan.FromSeconds(20) };
+  if (!allowPrivateNetwork) sockets.ConnectCallback = NetworkPolicy.ConnectPublicAsync;
+  client = new(handler ?? sockets);
   client.Timeout = Timeout.InfiniteTimeSpan;
  }
  public async Task<HttpResponseMessage> SendAsync(Uri uri, string? authId, RangeHeaderValue? range, string? ifRange, CancellationToken ct)

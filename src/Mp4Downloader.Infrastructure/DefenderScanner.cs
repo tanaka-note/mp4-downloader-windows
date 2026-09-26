@@ -4,17 +4,18 @@ using Mp4Downloader.Core;
 
 namespace Mp4Downloader.Infrastructure;
 
-public sealed class DefenderScanner(ProcessRunner processes) : IScanner
+public sealed class DefenderScanner(ProcessRunner processes, Func<string?>? executableLocator = null,
+ Func<string, string, CancellationToken, Task<ProcessResult>>? scanProcess = null) : IScanner
 {
  public async Task<ScanVerdict> ScanAsync(string path, CancellationToken ct)
  {
   if (!OperatingSystem.IsWindows()) return ScanVerdict.ScanUnavailable;
-  var executable = FindExecutable();
-  if (executable is null) return ScanVerdict.ScanUnavailable;
   try
   {
+   var executable = (executableLocator ?? FindExecutable)();
+   if (executable is null) return ScanVerdict.ScanUnavailable;
    var before = await HashAsync(path, ct);
-   var result = await processes.RunAsync(executable, ["-Scan", "-ScanType", "3", "-DisableRemediation", "-File", path], Path.GetDirectoryName(path)!, TimeSpan.FromMinutes(10), ct);
+   var result = scanProcess is null ? await processes.RunAsync(executable, ["-Scan", "-ScanType", "3", "-DisableRemediation", "-File", path], Path.GetDirectoryName(path)!, TimeSpan.FromMinutes(10), ct) : await scanProcess(executable, path, ct);
    var verdict = Classify(result);
    if (verdict != ScanVerdict.Clean) return verdict;
    if (!File.Exists(path)) return ScanVerdict.ScanError;

@@ -27,7 +27,7 @@
     <Button x:Name="ClearTempButton" Content="残った一時ファイルを削除" Click="ClearTemp_Click" />
     <Button x:Name="ClearBrowserButton" Content="WebView2データを削除" Click="ClearBrowser_Click" />
     <HyperlinkButton Content="WebView2 Runtime導入案内（Microsoft公式）" NavigateUri="https://developer.microsoft.com/microsoft-edge/webview2/" />
-    <TextBlock Text="非DRMのVODのみ対応。アプリ独自のクラウド送信・テレメトリは行いません。Windows側の保護機能などはOS設定に従って通信する場合があります。" TextWrapping="Wrap" />
+    <TextBlock Text="非DRMのVODのみ対応。ログイン・Cookie・DRM等を必要とする一部ストリームは未対応（認証付きDASHを含む）。アプリ独自のクラウド送信・テレメトリは行いません。Windows側の保護機能などはOS設定に従って通信する場合があります。" TextWrapping="Wrap" />
    </StackPanel></PivotItem>
   </Pivot>
  </Grid>
