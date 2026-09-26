@@ -4,6 +4,7 @@ param(
  [string]$ToolLock=(Join-Path $PSScriptRoot 'tools.lock.json'),
  [string]$BinaryPins=(Join-Path $PSScriptRoot 'binary-pins.json'),
  [string]$NoticesDirectory=(Join-Path $PSScriptRoot '../licenses'),
+ [string]$StreamingNoticesLock=(Join-Path $PSScriptRoot 'streaming-notices.lock.json'),
  [string]$ReleaseAssetDirectory=(Join-Path $PSScriptRoot '../artifacts'),
  [switch]$RequireReleaseAssets
 )
@@ -42,6 +43,10 @@ foreach($path in @('GPL-3.0.txt','GCC-Runtime-Library-Exception.txt','MinGW-w64-
  if(!(Test-Path $notice) -or (Get-Item $notice).Length -lt 20){throw ('License notice missing: '+$path)}
 }
 $configuration=& (Join-Path $ToolDirectory 'ffmpeg.exe') -hide_banner -buildconf 2>&1 | Out-String
+foreach($notice in (Get-Content $StreamingNoticesLock -Raw | ConvertFrom-Json).notices){
+ $path=Join-Path $NoticesDirectory $notice.path
+ if(!(Test-Path $path) -or (Get-FileHash $path).Hash.ToLowerInvariant() -ne $notice.sha256){throw 'Streaming dependency original license missing/changed'}
+}
 if($LASTEXITCODE -ne 0){throw 'Cannot read FFmpeg build configuration'}
 . (Join-Path $PSScriptRoot 'LicensePolicy.ps1')
 Assert-MediaLicenseConfiguration $configuration

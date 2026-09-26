@@ -45,3 +45,5 @@ shellを使用しないArgumentList、ローカルFFmpeg input/protocol制限、
 ## 最終候補の再検証（ライセンス対応後）
 
 FFmpeg 9.0.2固定自前ビルドへの置換後、Core 33 / Integration 93の126件PASS、FAIL 0 / SKIP 0。ライセンスgate PASS、危険な構成・改変・source/notice/asset不足を拒否する9件PASS。371の配布実行ファイル・ライブラリをhashと原パッケージで照合した。実HTTP 10ケース、公開MP4/HLS/DASH、yt-dlp generic Directの取得・実Defender Clean・保存・cleanupを再確認。通常権限の新規publishでWinUI起動、WebView2動的検出、private-peer拒否、FFmpeg、yt-dlp、Defender Clean、保存・cleanupがPASS。ブラウザRuntimeは153.0.4234.48。対応ソース10archivesと42 runtime file pinsを照合した。main/Releaseのclean buildとアップロードassetの最終結果はGitHub checksとReleaseへ記録する。
+
+最終点検で、NuGetにMIT expressionだけが含まれるSpectre.Console/AnsiとSystem.CommandLineの原文を補完した。各NuGetの固定repository commitから取得し、原文hashを固定してsource/package両方へ同梱。変更された原文を拒否する回帰試験を追加し、ライセンス回帰試験は10件となる。
