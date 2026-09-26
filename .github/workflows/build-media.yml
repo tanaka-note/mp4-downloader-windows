@@ -20,3 +20,8 @@ jobs:
           name: media-tools
           path: artifacts/media-tools.zip
           if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: media-config-log
+          path: artifacts/media-build/ffmpeg/ffbuild/config.log

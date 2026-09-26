@@ -33,7 +33,7 @@ cd "$work/opus"
 make -j2
 make install
 cd "$work/ffmpeg"
-./configure --target-os=mingw32 --arch=x86_64 --enable-cross-compile --cross-prefix=x86_64-w64-mingw32- --cc=x86_64-w64-mingw32-gcc-posix --prefix="$work/prefix" --disable-autodetect --enable-gpl --enable-version3 --enable-libx264 --enable-libvpx --enable-libopus --enable-static --disable-shared --disable-network --disable-devices --disable-doc --disable-debug --disable-ffplay --disable-iconv --disable-zlib --disable-bzlib --disable-lzma --extra-ldflags=-static
+./configure --target-os=mingw32 --arch=x86_64 --enable-cross-compile --cross-prefix=x86_64-w64-mingw32- --cc=x86_64-w64-mingw32-gcc-posix --pkg-config=pkg-config --pkg-config-flags=--static --prefix="$work/prefix" --disable-autodetect --enable-gpl --enable-version3 --enable-libx264 --enable-libvpx --enable-libopus --enable-static --disable-shared --disable-network --disable-devices --disable-doc --disable-debug --disable-ffplay --disable-iconv --disable-zlib --disable-bzlib --disable-lzma --extra-ldflags=-static
 make -j2 ffmpeg.exe ffprobe.exe
 cp ffmpeg.exe ffprobe.exe "$work/output/"
 cp config.h ffbuild/config.mak "$work/output/"
