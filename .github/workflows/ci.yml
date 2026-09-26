@@ -1,0 +1,28 @@
+name: Windows validation
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: windows-2025
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - name: Install frozen tools
+        shell: pwsh
+        run: ./tools/Install-Tools.ps1
+      - name: Locked restore
+        run: dotnet restore MP4Downloader.slnx -p:Platform=x64 --locked-mode
+      - name: Build
+        run: dotnet build MP4Downloader.slnx -c Release -p:Platform=x64 --no-restore
+      - name: Tests
+        run: dotnet test MP4Downloader.slnx -c Release -p:Platform=x64 --no-build --logger trx
+      - name: Self-contained publish
+        shell: pwsh
+        run: ./tools/Publish.ps1
