@@ -7,8 +7,9 @@ if ($LASTEXITCODE -ne 0) { throw 'Publish failed' }
 $toolDestination = Join-Path $Output 'tools'
 New-Item -ItemType Directory -Force -Path $toolDestination | Out-Null
 Get-ChildItem -LiteralPath (Join-Path $PSScriptRoot 'bin') | ForEach-Object { Copy-Item -LiteralPath $_.FullName -Destination $toolDestination -Recurse -Force }
-foreach ($notice in @('LICENSE','THIRD_PARTY_NOTICES.md','README.md')) { Copy-Item -LiteralPath (Join-Path $root $notice) -Destination $Output -Force }
+foreach ($notice in @('LICENSE','THIRD_PARTY_NOTICES.md','THIRD_PARTY_TERMS.md','THIRD_PARTY_LICENSES.txt','README.md')) { Copy-Item -LiteralPath (Join-Path $root $notice) -Destination $Output -Force }
 Copy-Item -LiteralPath (Join-Path $root 'licenses') -Destination $Output -Recurse -Force
+& (Join-Path $PSScriptRoot 'Publish-Inventory.ps1') -PublishDirectory $Output
 if (!(Test-Path -LiteralPath (Join-Path $Output 'Mp4Downloader.App.exe'))) { throw 'Executable missing' }
 if (!(Test-Path -LiteralPath (Join-Path $Output 'Microsoft.UI.Xaml.dll'))) { throw 'Self-contained WinUI runtime missing' }
 if (!(Test-Path -LiteralPath (Join-Path $Output 'Mp4Downloader.App.pri'))) { throw 'App XAML resource index missing' }

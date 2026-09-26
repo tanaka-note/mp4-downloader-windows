@@ -8,6 +8,26 @@ namespace Mp4Downloader.IntegrationTests;
 public class ReleaseSafetyTests
 {
  [Theory]
+ [InlineData(false)] [InlineData(true)]
+ public async Task PythonCompanionModificationOrExtraDllIsRejected(bool extra)
+ {
+  var root=Path.Combine(Path.GetTempPath(),"mp4-python-integrity-"+Guid.NewGuid().ToString("N"));
+  Directory.CreateDirectory(Path.Combine(root,"python"));
+  try
+  {
+   var hashes=new Dictionary<string,string>();
+   foreach(var relative in new[]{"yt-dlp","python/python.exe","python/python314.dll"})
+   {
+    var bytes=new byte[]{1,2,3};await File.WriteAllBytesAsync(Path.Combine(root,relative),bytes);
+    hashes[relative]=Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(bytes));
+   }
+   await File.WriteAllTextAsync(Path.Combine(root,"binary-hashes.json"),JsonSerializer.Serialize(hashes));
+   await File.WriteAllBytesAsync(Path.Combine(root,extra?"python/unlisted.dll":"python/python314.dll"),[4,5,6]);
+   Assert.Throws<DownloadFailure>(()=>new ToolCatalog(root).Find("yt-dlp"));
+  }
+  finally{Directory.Delete(root,true);}
+ }
+ [Theory]
  [InlineData("127.0.0.1")][InlineData("10.1.2.3")][InlineData("192.168.0.1")][InlineData("169.254.169.254")]
  [InlineData("172.16.0.1")][InlineData("100.64.0.1")][InlineData("::1")][InlineData("fd00::1")][InlineData("fe80::1")][InlineData("::ffff:127.0.0.1")]
  public void NonPublicAddressesAreRejected(string address)=>Assert.False(NetworkPolicy.IsPublic(System.Net.IPAddress.Parse(address)));

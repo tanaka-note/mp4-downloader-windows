@@ -35,8 +35,13 @@ shellを使用しないArgumentList、ローカルFFmpeg input/protocol制限、
 
 これは完全なOS sandboxではない。外部media parser自身の脆弱性をDefenderの最終ファイル検査が防ぐという保証はない。Tempは通常ユーザーのLocalAppData権限を利用し、同一ユーザーの悪意ある別プロセスや管理者からの改変防止を保証しない。Defender無効・missing・service不可・timeout・malware等は合成結果とhash改変による異常試験であり、実OSのDefender設定を停止した試験ではない。third-party AVの実機、物理第2ドライブ、専用Windows 11の初回セットアップ、署名後のSmartScreen挙動は未確認。
 
-## 公開を止める事項
+## ライセンスgateの解消と最終判定
 
-FFmpegの実`-buildconf`は`ffmpeg-build-configuration.txt`に保存。固定Gyan binaryはGPLv3でlibx264等の多数の依存を静的に含む。FFmpeg本体revisionだけでは全対応ソースにならず、正確な依存revision・patch・build script一式をまだ確認できていない。yt-dlp standaloneのGPL同梱依存も同様。
+旧Gyan FFmpegとPyInstaller版yt-dlpを配布対象から外した。FFmpeg 9.0.2は固定FFmpeg/x264/libvpx/Opusソースからビルドし、Windowsの実`-version`／`-buildconf`／`-L`、元ソースhash、compiler/configuration、licenceを記録する。yt-dlpは公式zipimport 2026.08.19＋CPython 3.14.7＋Node.js v24.21.0へ変更し、原配布hashとlicenseを保存。N_m3u8DL-REも固定tagから.NET 10.0.12・locked dependenciesでビルドした。
 
-LICENSE/noticeを追加したが、これだけで配布条件を満たしたとは扱わない。`tools/release-policy.json`はfalseのまま、公開ZIP生成を拒否する。ユーザーの「license問題なしの場合のみmerge / Release」という条件を満たさないため、Draft解除・merge・tag・GitHub Releaseは停止する。次の推奨作業は、固定依存から再現可能なFFmpeg/yt-dlpビルドと全対応ソースの配布を整備すること。新たな署名証明書を勝手に生成しない。
+アプリソースはMIT、独立したGPLツールとMicrosoft配布DLLの条件は別々に保持する。`THIRD_PARTY_TERMS.md`にMicrosoft条件を渡し、全DLL/実行ファイルの原パッケージ照合を`Publish-Inventory.ps1`で実施する。対応ソース、build scripts／設定／lockfile／compiler／patch情報（媒体ソース変更なし）は同じReleaseのsource ZIPへ保存する。ライセンスgateは実binary hash／version／禁止構成／追加library／source／notice／build record／Release asset／SHA256SUMSを検査する。
+
+バイナリ変更後の最終試験結果、PR/main SHA、CI、アップロードしたassetの再取得・起動検証は最終報告およびGitHub Releaseに記録する。Windows CIが管理者の場合のブラウザskipと、通常権限で実行したWebView2試験は引き続き区別する。物理第2ドライブ／third-party AV／初期状態Windowsは未確認のままである。
+## 最終候補の再検証（ライセンス対応後）
+
+FFmpeg 9.0.2固定自前ビルドへの置換後、Core 33 / Integration 93の126件PASS、FAIL 0 / SKIP 0。ライセンスgate PASS、危険な構成・改変・source/notice/asset不足を拒否する9件PASS。371の配布実行ファイル・ライブラリをhashと原パッケージで照合した。実HTTP 10ケース、公開MP4/HLS/DASH、yt-dlp generic Directの取得・実Defender Clean・保存・cleanupを再確認。通常権限の新規publishでWinUI起動、WebView2動的検出、private-peer拒否、FFmpeg、yt-dlp、Defender Clean、保存・cleanupがPASS。ブラウザRuntimeは153.0.4234.48。対応ソース10archivesと42 runtime file pinsを照合した。main/Releaseのclean buildとアップロードassetの最終結果はGitHub checksとReleaseへ記録する。

@@ -1,6 +1,6 @@
 # MP4 Downloader — v0.1 release candidate (v0.2 internal design)
 
-Status: release validation branch. Merge/public Release are authorized only after all gates, including corresponding-source obligations, pass. Public redistribution remains blocked by tools/release-policy.json. Company/product identifiers: TanakaNote / Mp4Downloader. Windows 11 x64, standard user only.
+Status: v0.1.0 release candidate. Merge/public Release require all functional, corresponding-source, notice/hash and asset gates. Company/product identifiers: TanakaNote / Mp4Downloader. Windows 11 x64, standard user only.
 
 ## Product and isolation
 
@@ -16,12 +16,13 @@ Checked official release/registry metadata on 2026-09-26:
 | Windows App SDK | 2.5.1 | https://www.nuget.org/packages/Microsoft.WindowsAppSDK/2.5.1 |
 | WebView2 SDK | 1.0.4191.47 | https://www.nuget.org/packages/Microsoft.Web.WebView2/1.0.4191.47 |
 | Windows SDK BuildTools | 10.0.28000.2705 | https://www.nuget.org/packages/Microsoft.Windows.SDK.BuildTools/10.0.28000.2705 |
-| yt-dlp Windows binary | 2026.08.19 | https://github.com/yt-dlp/yt-dlp/releases/tag/2026.08.19 |
-| Deno | 2.9.7 | https://github.com/denoland/deno/releases/tag/v2.9.7 |
-| FFmpeg / ffprobe | 9.0.2 Gyan essentials | https://www.gyan.dev/ffmpeg/builds/ |
+| yt-dlp zipimport | 2026.08.19 | https://github.com/yt-dlp/yt-dlp/releases/tag/2026.08.19 |
+| Python | 3.14.7 official embedded | https://www.python.org/downloads/ |
+| Node.js | 24.21.0 official executable | https://nodejs.org/dist/v24.21.0/ |
+| FFmpeg / ffprobe | 9.0.2 own build with x264/libvpx/Opus only | tools/media-sources.lock.json |
 | N_m3u8DL-RE | 0.6.0-beta | https://github.com/nilaoda/N_m3u8DL-RE/releases/tag/v0.6.0-beta |
 
-N_m3u8DL-RE upstream currently offers a beta-tagged release, not a stable-tagged alternative. It is explicitly pinned as a beta exception and exercised using local HLS/DASH fixtures. Do not label it stable. NuGet transitive dependencies are locked in packages.lock.json. Downloaded archives have pinned SHA-256 values; extracted binaries are verified before execution. No runtime auto-update or remote EJS components. Official yt-dlp Windows binary includes EJS; Deno runs the built-in solver without granting broad permissions. WebView2 Evergreen is the explicit security-servicing exception to runtime version freeze.
+N_m3u8DL-RE remains a pinned beta exception, built from exact MIT source with .NET 10.0.12 and locked dependencies; do not label it stable. Downloaded archives and all extracted runtime files have pinned hashes. yt-dlp uses official zipimport with built-in EJS and isolated embedded Python; fixed Node.js runs the solver. No PyInstaller/curl_cffi/Deno, runtime auto-update, user packages or remote EJS components. NODE_OPTIONS/NODE_PATH are removed; Python companions and payload are hash checked. WebView2 Evergreen is the explicit security-servicing exception to runtime version freeze. Runtime extraction stays inside the job via DOTNET_BUNDLE_EXTRACT_BASE_DIR.
 
 ## Packaging
 
@@ -81,6 +82,6 @@ Job leases prevent recovery from deleting active jobs. Normal termination cleans
 
 ## Validation and release gates
 
-Use local HTTP fixtures and short synthetic media for repeatable tests. Real-site support varies with website changes and needs a small representative manual check before a production release. CI restores locked packages, installs hash-pinned tools, tests and publishes the self-contained app. CI starts the app from the verified, extracted internal ZIP. Hosted elevated runners test WinUI startup, Runtime environment creation, missing-Runtime failure, media, safe-save/fail-closed scan and cleanup; browser playback is explicitly skipped on elevated runners. The non-elevated local desktop tests dynamic WebView2 discovery. A separate isolated 128MiB VHD test compares actual Windows volume IDs and verifies copy/hash/rename/cleanup, not subst. Physical second-drive and third-party-antivirus environments are separate manual checks. No automatic merge or public Release workflow bypasses the license gate. See release-validation.md for executed results.
+CI restores locked packages, installs hash-pinned tools, tests and publishes the self-contained app. It preserves corresponding sources, runs negative license regressions, rejects nonfree/unreviewed media builds, validates complete Release assets/SHA256SUMS, and starts the verified extracted ZIP. Hosted elevated runners skip browser playback explicitly; a normal-user desktop tests dynamic WebView2 detection and private-peer rejection. An isolated 128MiB VHD compares real Windows volume IDs and verifies copy/hash/rename/cleanup, not subst. Physical second-drive and third-party-AV environments remain manual checks. Tag workflow creates Draft Release only; the uploaded artifacts must be re-downloaded and tested before publication. See release-validation.md and third-party-builds.md.
 
 Before actual public binary distribution, complete corresponding-source/license packaging for all third-party binary dependencies, validate on a clean Windows 11 machine, verify real Defender behavior and representative browser/site flows. See THIRD_PARTY_NOTICES.md. No claims of these checks until actually executed.

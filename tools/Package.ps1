@@ -1,11 +1,12 @@
-param([string]$PublishDirectory=(Join-Path $PSScriptRoot '../artifacts/publish'), [switch]$ForRelease)
+param([string]$PublishDirectory=(Join-Path $PSScriptRoot '../artifacts/publish'), [switch]$ForRelease, [string]$SmokeDirectory=(Join-Path $PSScriptRoot '../artifacts/package-smoke'))
 $ErrorActionPreference='Stop'
 $root=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $published=[IO.Path]::GetFullPath($PublishDirectory)
 $policy=Get-Content -LiteralPath (Join-Path $PSScriptRoot 'release-policy.json') -Raw | ConvertFrom-Json
 if(Test-Path -LiteralPath (Join-Path $published 'tools/bin')) {throw 'Stale nested tool directory: publish into an empty output directory before packaging'}
 if($ForRelease -and !$policy.publicRedistributionApproved) { throw ('Public release blocked: ' + ($policy.blockers -join ' ')) }
-foreach($file in @('Mp4Downloader.App.exe','Mp4Downloader.App.pri','Microsoft.UI.Xaml.dll','README.md','LICENSE','THIRD_PARTY_NOTICES.md','tools/ffmpeg.exe','tools/ffprobe.exe','tools/yt-dlp.exe','tools/deno.exe','tools/N_m3u8DL-RE.exe','tools/binary-hashes.json')) {
+if($ForRelease){& (Join-Path $PSScriptRoot 'Test-LicenseGate.ps1') -ToolDirectory (Join-Path $published 'tools')}
+foreach($file in @('Mp4Downloader.App.exe','Mp4Downloader.App.pri','Microsoft.UI.Xaml.dll','README.md','LICENSE','THIRD_PARTY_NOTICES.md','THIRD_PARTY_TERMS.md','THIRD_PARTY_LICENSES.txt','THIRD_PARTY_MANIFEST.json','tools/ffmpeg.exe','tools/ffprobe.exe','tools/yt-dlp','tools/python/python.exe','tools/node.exe','tools/N_m3u8DL-RE.exe','tools/binary-hashes.json')) {
  if(!(Test-Path -LiteralPath (Join-Path $published $file))) { throw "Package file missing: $file" }
 }
 $commit=git -C $root rev-parse HEAD
@@ -33,7 +34,7 @@ try {
 } finally {$archive.Dispose()}
 $sha=(Get-FileHash -LiteralPath $zip -Algorithm SHA256).Hash.ToLowerInvariant()
 [IO.File]::WriteAllText($zip+'.sha256',$sha+'  '+$name+"`n")
-$unpacked=Join-Path $root 'artifacts/package-smoke'
+$unpacked=[IO.Path]::GetFullPath($SmokeDirectory)
 if(Test-Path -LiteralPath $unpacked) {throw 'Package smoke directory already exists; use a fresh checkout/artifact root'}
 [IO.Compression.ZipFile]::ExtractToDirectory($zip,$unpacked)
 Write-Host "ZIP bytes verified against publish: $zip; SHA256: $sha; public redistribution approved: $($policy.publicRedistributionApproved)"

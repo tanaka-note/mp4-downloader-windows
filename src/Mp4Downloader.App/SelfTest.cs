@@ -25,6 +25,8 @@ internal static class SelfTest
    if (elevated && !releaseSmoke) throw new InvalidOperationException("Browser diagnostics require a non-elevated user.");
    using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(45));
    var tools = new ToolCatalog(Path.Combine(AppContext.BaseDirectory, "tools")); var runner = new ProcessRunner();
+   var ytVersion = await runner.RunAsync(tools.Find("yt-dlp"), ["-I", "-B", tools.VerifyFile("yt-dlp"), "--ignore-config", "--no-update", "--version"], root, TimeSpan.FromSeconds(15), timeout.Token);
+   if (ytVersion.ExitCode != 0 || ytVersion.Output.Trim() != "2026.08.19") throw new InvalidOperationException("Bundled yt-dlp startup/version failed.");
    var video = Path.Combine(root, "fixture.mp4");
    var created = await runner.RunAsync(tools.Find("ffmpeg"), ["-v", "error", "-nostdin", "-y", "-f", "lavfi", "-i", "testsrc2=size=128x72:rate=12", "-t", "3", "-c:v", "libx264", "-pix_fmt", "yuv420p", "-movflags", "+faststart", video], root, TimeSpan.FromSeconds(20), timeout.Token);
    if (created.ExitCode != 0) throw new InvalidOperationException("Fixture creation failed.");
@@ -67,7 +69,7 @@ internal static class SelfTest
    if (!safeSave || Directory.EnumerateDirectories(Path.Combine(storage.Root, "Jobs")).Any()) throw new InvalidOperationException("Pipeline safe-save or cleanup failed.");
    server.Close(); await serving;
    await File.WriteAllTextAsync(report, JsonSerializer.Serialize(new { Startup = true, Media = true, WebView2DynamicDiscovery = discovered, BrowserProxyBlocksPrivate = privateBrowserBlocked, BrowserSkippedElevated = elevated, MissingRuntimeHandled = missingHandled, Runtime = environment.BrowserVersionString,
-    SafeSave = safeSave, Defender = scan.Verdict.ToString(), PipelineOutcome = outcome.Stage.ToString(), TempCleanup = true }));
+    YtDlpVersion = ytVersion.Output.Trim(), SafeSave = safeSave, Defender = scan.Verdict.ToString(), PipelineOutcome = outcome.Stage.ToString(), TempCleanup = true }));
   }
   catch (Exception ex)
   {

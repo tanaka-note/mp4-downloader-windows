@@ -8,10 +8,10 @@ using System.Text.Json;
 var repo = Path.GetFullPath(args.Length > 1 ? args[1] : ".");
 var mode = args.FirstOrDefault() ?? "--public";
 var root = Path.Combine(repo,"artifacts","validation-"+Guid.NewGuid().ToString("N")); Directory.CreateDirectory(root);
-var tools = new ToolCatalog(Path.Combine(repo,"tools","bin")); var runner=new ProcessRunner();
+var tools = new ToolCatalog(args.Length > 3 ? Path.GetFullPath(args[3]) : Path.Combine(repo,"tools","bin")); var runner=new ProcessRunner();
 var vault=new AuthVault(); using var http = new HttpTransport(vault,allowPrivateNetwork: mode=="--http"); var manifest=new ManifestResolver(http);
 using var storage = new JobStorage(Path.Combine(root,"Data"));
-var coordinator = new DownloadCoordinator(mode=="--site" ? [new YtDlpResolver(tools,runner,manifest,vault,()=>storage.ActiveDirectory),new HtmlResolver(http,manifest)] : [new DirectResolver(http),manifest],new Selection(),new AcquisitionPlanner(),
+var coordinator = new DownloadCoordinator(mode is "--site" or "--yt-direct" ? [new YtDlpResolver(tools,runner,manifest,vault,()=>storage.ActiveDirectory),new HtmlResolver(http,manifest)] : [new DirectResolver(http),manifest],new Selection(),new AcquisitionPlanner(),
  [new DirectDownloadEngine(http),new ManifestDownloadEngine(tools,runner),new HlsDownloadEngine(http)],new MediaPipeline(tools,runner,new MediaProbe(tools,runner)),new DefenderScanner(runner),storage);
 var results = new List<object>();
 async Task Download(string name,string url)
@@ -33,10 +33,11 @@ if(mode=="--public")
  await Download("Public clear DASH","https://storage.googleapis.com/shaka-demo-assets/angel-one/dash.mpd");
 }
 else if(mode=="--site") await Download("Public video page, HTML fallback after extractor playlist rejection","https://www.w3schools.com/html/html5_video.asp");
+else if(mode=="--yt-direct") await Download("yt-dlp generic extraction + direct acquisition","https://www.w3schools.com/html/mov_bbb.mp4");
 else if(mode=="--site-diagnose")
 {
  using var proxy=new PublicNetworkProxy();
- var result=await runner.RunAsync(tools.Find("yt-dlp"),["--ignore-config","--no-plugin-dirs","--no-remote-components","--no-update","--no-playlist","--no-progress","--no-warnings","--no-cache-dir","--no-js-runtimes","--js-runtimes","deno:"+tools.Find("deno"),"--socket-timeout","20","--retries","0","--proxy",proxy.Address.AbsoluteUri,"--dump-single-json","--skip-download","--format","bestvideo+bestaudio/best","--","https://www.w3schools.com/html/html5_video.asp"],root,TimeSpan.FromMinutes(1),default);
+ var result=await runner.RunAsync(tools.Find("yt-dlp"),["-I","-B",tools.VerifyFile("yt-dlp"),"--ignore-config","--no-plugin-dirs","--no-remote-components","--no-update","--no-playlist","--no-progress","--no-warnings","--no-cache-dir","--no-js-runtimes","--js-runtimes","node:"+tools.Find("node"),"--socket-timeout","20","--retries","0","--proxy",proxy.Address.AbsoluteUri,"--dump-single-json","--skip-download","--format","bestvideo+bestaudio/best","--","https://www.w3schools.com/html/html5_video.asp"],root,TimeSpan.FromMinutes(1),default);
  Console.WriteLine("Extractor exit: "+result.ExitCode+"; "+PrivacyText.Redact(result.Error));
  if(result.ExitCode==0) {using var parsed=JsonDocument.Parse(result.Output);var j=parsed.RootElement;Console.WriteLine("Extractor type: "+(j.TryGetProperty("_type",out var type)?type.GetString():"video")+"; entries: "+(j.TryGetProperty("entries",out var entries)?entries.GetArrayLength():0));}
 }

@@ -28,9 +28,18 @@ jobs:
       - name: Self-contained publish
         shell: pwsh
         run: ./tools/Publish.ps1
+      - name: Corresponding sources
+        shell: pwsh
+        run: ./tools/Package-Sources.ps1
+      - name: License regression tests
+        shell: pwsh
+        run: ./tools/Test-LicenseGate.Tests.ps1
       - name: ZIP package validation
         shell: pwsh
-        run: ./tools/Package.ps1
+        run: ./tools/Package.ps1 -ForRelease
+      - name: Complete release assets gate
+        shell: pwsh
+        run: ./tools/Release-Assets.ps1
       - name: Published ZIP startup and safe-save smoke
         shell: pwsh
         run: ./tools/Smoke-Test.ps1 -PublishDirectory ./artifacts/package-smoke -ReleaseSmoke

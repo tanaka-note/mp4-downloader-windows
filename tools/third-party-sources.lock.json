@@ -1,0 +1,103 @@
+{
+  "buildScripts": [
+    "tools/Build-Media.sh",
+    "tools/Build-Streaming.ps1",
+    "tools/Install-Tools.ps1",
+    "tools/LicensePolicy.ps1",
+    "tools/Test-LicenseGate.ps1"
+  ],
+  "sources": [
+    {
+      "name": "ffmpeg",
+      "version": "9.0.2",
+      "commit": "946fcce07b6dcd0331c8cc609192aeff5e1924f8",
+      "license": "GPL-3.0-or-later",
+      "url": "https://codeload.github.com/FFmpeg/FFmpeg/tar.gz/refs/tags/n9.0.2",
+      "sha256": "6e374ed621e48faa40639307dff48ba6fe574a509977956d2cce9669b7cc27e9",
+      "file": "ffmpeg.tar.gz"
+    },
+    {
+      "name": "x264",
+      "version": "stable-2026-09-26",
+      "commit": "b35605ace3ddf7c1a5d67a2eb553f034aef41d55",
+      "license": "GPL-2.0-or-later",
+      "url": "https://codeload.github.com/mirror/x264/tar.gz/b35605ace3ddf7c1a5d67a2eb553f034aef41d55",
+      "sha256": "cd71a7515b0e9a012e1ac9b1f8415bebcaf6fc97d4db32286642ac4c0fbe24f9",
+      "file": "x264.tar.gz"
+    },
+    {
+      "name": "libvpx",
+      "version": "1.15.2",
+      "commit": "d168454ecd099805c675d4a98c66f4891373302a",
+      "license": "BSD-3-Clause",
+      "url": "https://codeload.github.com/webmproject/libvpx/tar.gz/refs/tags/v1.15.2",
+      "sha256": "26fcd3db88045dee380e581862a6ef106f49b74b6396ee95c2993a260b4636aa",
+      "file": "libvpx.tar.gz"
+    },
+    {
+      "name": "opus",
+      "version": "1.5.2",
+      "commit": "ddbe48383984d56acd9e1ab6a090c54ca6b735a6",
+      "license": "BSD-3-Clause",
+      "url": "https://codeload.github.com/xiph/opus/tar.gz/refs/tags/v1.5.2",
+      "sha256": "9480e329e989f70d69886ded470c7f8cfe6c0667cc4196d4837ac9e668fb7404",
+      "file": "opus.tar.gz"
+    },
+    {
+      "file": "yt-dlp.tar.gz",
+      "name": "yt-dlp",
+      "url": "https://github.com/yt-dlp/yt-dlp/releases/download/2026.08.19/yt-dlp.tar.gz",
+      "commit": "3a08beaf031ab68f966401ead017ac81fe8486cf",
+      "sha256": "072aad4f2a7604e92155f61a275a4752dc64046c8f6d90df3710525d94cd37c1",
+      "version": "2026.08.19",
+      "license": "Unlicense AND ISC AND MIT"
+    },
+    {
+      "file": "python.tar.xz",
+      "name": "python",
+      "url": "https://www.python.org/ftp/python/3.14.7/Python-3.14.7.tar.xz",
+      "commit": "v3.14.7",
+      "sha256": "3b48dac8fb59f62eaa67ac83c1eb12bda1b7a08406dd286e252c11a66be27f81",
+      "version": "3.14.7",
+      "license": "PSF-2.0 and bundled component notices"
+    },
+    {
+      "file": "node.tar.xz",
+      "name": "node",
+      "url": "https://nodejs.org/dist/v24.21.0/node-v24.21.0.tar.xz",
+      "commit": "v24.21.0",
+      "sha256": "a6f54defb6fd7c84f41dba13d61e78e9b4e0961712cf61f29715c05f5ced94fc",
+      "version": "v24.21.0",
+      "license": "MIT and bundled component notices"
+    },
+    {
+      "file": "N_m3u8DL-RE.tar.gz",
+      "name": "N_m3u8DL-RE",
+      "url": "https://codeload.github.com/nilaoda/N_m3u8DL-RE/tar.gz/refs/tags/v0.6.0-beta",
+      "commit": "df70f0b3da0c630bd413bf617e758051f6b64757",
+      "sha256": "7ecaf9614ac7d2897cb9c3d07c02e4ff6e4e19ce327cacbda916e6fb44b67d6d",
+      "version": "v0.6.0-beta",
+      "license": "MIT"
+    },
+    {
+      "file": "ejs.tar.gz",
+      "name": "ejs",
+      "url": "https://codeload.github.com/yt-dlp/ejs/tar.gz/refs/tags/0.8.0",
+      "commit": "4fb477f4af56880cfd324c48bd4294a2d2294e50",
+      "sha256": "2704dfcac899fcb443d3b80cb8bb6337c5eb98d09ebf0760295d1c58e9461e53",
+      "version": "0.8.0",
+      "license": "Unlicense AND ISC AND MIT"
+    },
+    {
+      "sha256": "9c82a58713786c95b0594443a1c6190cd986401ed2b03677a90acc470140af28",
+      "name": "mingw",
+      "url": "https://codeload.github.com/mingw-w64/mingw-w64/tar.gz/refs/tags/v11.0.1",
+      "version": "11.0.1",
+      "commit": "v11.0.1",
+      "file": "mingw.tar.gz",
+      "license": "ZPL-2.1 AND Public Domain AND bundled component notices"
+    }
+  ],
+  "format": 1,
+  "patches": []
+}

@@ -75,8 +75,8 @@ public sealed class YtDlpResolver(ToolCatalog tools, ProcessRunner processes, Ma
 }
 internal static class YtArguments
 {
- public static string[] Base(ToolCatalog tools) => ["--ignore-config", "--no-plugin-dirs", "--no-remote-components", "--no-update", "--no-playlist", "--no-progress", "--no-warnings",
-  "--no-cache-dir", "--no-js-runtimes", "--js-runtimes", "deno:" + tools.Find("deno"), "--socket-timeout", "20", "--retries", "2", "--ffmpeg-location", tools.Directory];
+ public static string[] Base(ToolCatalog tools) => ["-I", "-B", tools.VerifyFile("yt-dlp"), "--ignore-config", "--no-plugin-dirs", "--no-remote-components", "--no-update", "--no-playlist", "--no-progress", "--no-warnings",
+  "--no-cache-dir", "--no-js-runtimes", "--js-runtimes", "node:" + tools.Find("node"), "--socket-timeout", "20", "--retries", "2", "--ffmpeg-location", tools.Directory];
 }
 // Only already-classified public direct resources are eligible. This adapter never reselects a site video.
 public sealed class YtDlpDownloadEngine(ToolCatalog tools, ProcessRunner processes) : IDownloadEngine

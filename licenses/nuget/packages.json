@@ -1,0 +1,243 @@
+[
+  {
+    "repository": "https://github.com/dotnet/dotnet",
+    "notices": [
+      "LICENSE.txt",
+      "THIRD-PARTY-NOTICES.TXT"
+    ],
+    "commit": "95017c711e6afc1085133d440e42b4bd78155701",
+    "id": "Microsoft.AspNetCore.App.Runtime.win-x64/10.0.12",
+    "licenseUrl": "https://licenses.nuget.org/MIT",
+    "license": "MIT"
+  },
+  {
+    "repository": "https://github.com/dotnet/dotnet",
+    "notices": [
+      "THIRD-PARTY-NOTICES.TXT"
+    ],
+    "commit": "95017c711e6afc1085133d440e42b4bd78155701",
+    "id": "Microsoft.NET.ILLink.Tasks/10.0.12",
+    "licenseUrl": "https://licenses.nuget.org/MIT",
+    "license": "MIT"
+  },
+  {
+    "repository": "https://github.com/dotnet/dotnet",
+    "notices": [
+      "LICENSE.TXT",
+      "THIRD-PARTY-NOTICES.TXT"
+    ],
+    "commit": "95017c711e6afc1085133d440e42b4bd78155701",
+    "id": "Microsoft.NETCore.App.Runtime.win-x64/10.0.12",
+    "licenseUrl": "https://licenses.nuget.org/MIT",
+    "license": "MIT"
+  },
+  {
+    "repository": "",
+    "notices": [
+      "LICENSE.txt",
+      "NOTICE.txt"
+    ],
+    "commit": "",
+    "id": "Microsoft.Web.WebView2/1.0.4191.47",
+    "licenseUrl": "https://aka.ms/deprecateLicenseUrl",
+    "license": "LICENSE.txt"
+  },
+  {
+    "repository": "",
+    "notices": [
+      "license.txt",
+      "ThirdPartyNotices.txt"
+    ],
+    "commit": "",
+    "id": "Microsoft.Windows.AI.MachineLearning/2.1.74",
+    "licenseUrl": "https://aka.ms/deprecateLicenseUrl",
+    "license": "license.txt"
+  },
+  {
+    "repository": "",
+    "notices": [
+      "NOTICE.txt",
+      "sdk_license.txt"
+    ],
+    "commit": "3d99c4ab878d466b1742f96929ec6ccc46e6530b",
+    "id": "Microsoft.Windows.SDK.BuildTools.MSIX/1.7.251221100",
+    "licenseUrl": "https://aka.ms/deprecateLicenseUrl",
+    "license": "sdk_license.txt"
+  },
+  {
+    "repository": "",
+    "notices": [],
+    "commit": "",
+    "id": "Microsoft.Windows.SDK.BuildTools/10.0.28000.2705",
+    "licenseUrl": "https://aka.ms/WinSDKLicenseURL",
+    "license": ""
+  },
+  {
+    "repository": "",
+    "notices": [],
+    "commit": "",
+    "id": "Microsoft.Windows.SDK.NET.Ref/10.0.22621.57",
+    "licenseUrl": "https://aka.ms/WinSDKLicenseURL",
+    "license": ""
+  },
+  {
+    "repository": "",
+    "notices": [
+      "license.txt"
+    ],
+    "commit": "",
+    "id": "Microsoft.WindowsAppSDK.AI/2.5.5",
+    "licenseUrl": "https://aka.ms/deprecateLicenseUrl",
+    "license": "license.txt"
+  },
+  {
+    "repository": "",
+    "notices": [
+      "license.txt",
+      "NOTICE.txt"
+    ],
+    "commit": "",
+    "id": "Microsoft.WindowsAppSDK.Base/2.0.4",
+    "licenseUrl": "https://aka.ms/deprecateLicenseUrl",
+    "license": "license.txt"
+  },
+  {
+    "repository": "",
+    "notices": [
+      "license.txt"
+    ],
+    "commit": "",
+    "id": "Microsoft.WindowsAppSDK.DWrite/2.1.0",
+    "licenseUrl": "https://aka.ms/deprecateLicenseUrl",
+    "license": "license.txt"
+  },
+  {
+    "repository": "",
+    "notices": [
+      "license.txt"
+    ],
+    "commit": "",
+    "id": "Microsoft.WindowsAppSDK.Foundation/2.3.12",
+    "licenseUrl": "https://aka.ms/deprecateLicenseUrl",
+    "license": "license.txt"
+  },
+  {
+    "repository": "",
+    "notices": [
+      "license.txt"
+    ],
+    "commit": "",
+    "id": "Microsoft.WindowsAppSDK.InteractiveExperiences/2.1.9",
+    "licenseUrl": "https://aka.ms/deprecateLicenseUrl",
+    "license": "license.txt"
+  },
+  {
+    "repository": "https://github.com/microsoft/windowsml",
+    "notices": [
+      "license.txt"
+    ],
+    "commit": "0cc53295b396ea9c054b717a6cfbcee10e4bc40f",
+    "id": "Microsoft.WindowsAppSDK.ML/2.1.94",
+    "licenseUrl": "https://aka.ms/deprecateLicenseUrl",
+    "license": "license.txt"
+  },
+  {
+    "repository": "",
+    "notices": [
+      "license.txt",
+      "NOTICE.txt"
+    ],
+    "commit": "",
+    "id": "Microsoft.WindowsAppSDK.Runtime/2.5.1",
+    "licenseUrl": "https://aka.ms/deprecateLicenseUrl",
+    "license": "license.txt"
+  },
+  {
+    "repository": "",
+    "notices": [
+      "license.txt"
+    ],
+    "commit": "",
+    "id": "Microsoft.WindowsAppSDK.Search/2.5.5",
+    "licenseUrl": "https://aka.ms/deprecateLicenseUrl",
+    "license": "license.txt"
+  },
+  {
+    "repository": "",
+    "notices": [
+      "license.txt"
+    ],
+    "commit": "",
+    "id": "Microsoft.WindowsAppSDK.Widgets/2.0.5",
+    "licenseUrl": "https://aka.ms/deprecateLicenseUrl",
+    "license": "license.txt"
+  },
+  {
+    "repository": "",
+    "notices": [
+      "license.txt",
+      "NOTICE.txt",
+      "tools/NOTICE.txt"
+    ],
+    "commit": "",
+    "id": "Microsoft.WindowsAppSDK.WinUI/2.3.9",
+    "licenseUrl": "https://aka.ms/deprecateLicenseUrl",
+    "license": "license.txt"
+  },
+  {
+    "repository": "",
+    "notices": [
+      "license.txt",
+      "NOTICE.txt"
+    ],
+    "commit": "",
+    "id": "Microsoft.WindowsAppSDK/2.5.1",
+    "licenseUrl": "https://aka.ms/deprecateLicenseUrl",
+    "license": "license.txt"
+  },
+  {
+    "repository": "https://github.com/dotnet/dotnet",
+    "notices": [
+      "LICENSE"
+    ],
+    "commit": "95017c711e6afc1085133d440e42b4bd78155701",
+    "id": "Microsoft.WindowsDesktop.App.Runtime.win-x64/10.0.12",
+    "licenseUrl": "https://licenses.nuget.org/MIT",
+    "license": "MIT"
+  },
+  {
+    "repository": "https://github.com/spectreconsole/spectre.console",
+    "notices": [],
+    "commit": "a0913f8628344e429e3994a020c3f791347436b1",
+    "id": "Spectre.Console.Ansi/0.57.1",
+    "licenseUrl": "https://licenses.nuget.org/MIT",
+    "license": "MIT"
+  },
+  {
+    "repository": "https://github.com/spectreconsole/spectre.console",
+    "notices": [],
+    "commit": "a0913f8628344e429e3994a020c3f791347436b1",
+    "id": "Spectre.Console/0.57.1",
+    "licenseUrl": "https://licenses.nuget.org/MIT",
+    "license": "MIT"
+  },
+  {
+    "repository": "https://github.com/dotnet/dotnet",
+    "notices": [],
+    "commit": "89c8f6a112d37d2ea8b77821e56d170a1bccdc5a",
+    "id": "System.CommandLine/2.0.0-rc.2.25502.107",
+    "licenseUrl": "https://licenses.nuget.org/MIT",
+    "license": "MIT"
+  },
+  {
+    "repository": "https://github.com/dotnet/runtime",
+    "notices": [
+      "LICENSE.TXT",
+      "THIRD-PARTY-NOTICES.TXT"
+    ],
+    "commit": "9d5a6a9aa463d6d10b0b0ba6d5982cc82f363dc3",
+    "id": "System.Numerics.Tensors/9.0.0",
+    "licenseUrl": "https://licenses.nuget.org/MIT",
+    "license": "MIT"
+  }
+]

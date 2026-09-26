@@ -4,10 +4,16 @@ $lock = Get-Content (Join-Path $PSScriptRoot 'tools.lock.json') -Raw | ConvertFr
 $cache = Join-Path $PSScriptRoot 'cache'
 New-Item -ItemType Directory -Force -Path $Destination,$cache | Out-Null
 foreach ($tool in $lock.tools) {
- $archive = Join-Path $cache ([IO.Path]::GetFileName($tool.url))
- if (!(Test-Path -LiteralPath $archive)) { Invoke-WebRequest -Uri $tool.url -OutFile $archive }
+ $archive = if($tool.localArchive){Join-Path $PSScriptRoot $tool.localArchive}else{Join-Path $cache ([IO.Path]::GetFileName($tool.url))}
+ if (!(Test-Path -LiteralPath $archive)) { if($tool.localArchive){throw 'Vendored tool archive missing'};Invoke-WebRequest -Uri $tool.url -OutFile $archive }
  if ((Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant() -ne $tool.sha256) { throw "Hash mismatch: $($tool.name)" }
- if ($archive.EndsWith('.zip')) {
+ if ($tool.kind -eq 'zipimport') {
+  Copy-Item -LiteralPath $archive -Destination (Join-Path $Destination 'yt-dlp') -Force
+  $obsolete=Join-Path $Destination 'yt-dlp.exe'
+  if(Test-Path -LiteralPath $obsolete){[IO.File]::Delete([IO.Path]::GetFullPath($obsolete))}
+ } elseif ($tool.kind -eq 'python-embedded') {
+  Expand-Archive -LiteralPath $archive -DestinationPath (Join-Path $Destination 'python') -Force
+ } elseif ($archive.EndsWith('.zip')) {
   $expanded = Join-Path $cache ($tool.name + '-' + $tool.version)
   Expand-Archive -LiteralPath $archive -DestinationPath $expanded -Force
   foreach ($name in $(if ($tool.name -eq 'ffmpeg') { @('ffmpeg.exe','ffprobe.exe') } else { @($tool.name + '.exe') })) {
@@ -21,7 +27,9 @@ foreach ($tool in $lock.tools) {
  } else { Copy-Item -LiteralPath $archive -Destination (Join-Path $Destination 'yt-dlp.exe') -Force }
  Write-Host "Verified $($tool.name) $($tool.version)"
 }
-$files = @('ffmpeg.exe','ffprobe.exe','yt-dlp.exe','deno.exe','N_m3u8DL-RE.exe')
+$obsoleteDeno=Join-Path $Destination 'deno.exe'
+if(Test-Path -LiteralPath $obsoleteDeno){[IO.File]::Delete([IO.Path]::GetFullPath($obsoleteDeno))}
+$files = @('ffmpeg.exe','ffprobe.exe','yt-dlp','node.exe','N_m3u8DL-RE.exe') + @(Get-ChildItem (Join-Path $Destination 'python') -Recurse -File | ForEach-Object {[IO.Path]::GetRelativePath([IO.Path]::GetFullPath($Destination),$_.FullName).Replace('\','/')})
 $hashes = @{}
 foreach ($file in $files) { $hashes[$file] = (Get-FileHash -LiteralPath (Join-Path $Destination $file)).Hash.ToLowerInvariant() }
 $hashes | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $Destination 'binary-hashes.json') -Encoding utf8

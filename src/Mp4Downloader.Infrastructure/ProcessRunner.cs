@@ -13,13 +13,25 @@ public sealed class ToolCatalog(string directory)
  public string Directory { get; } = Path.GetFullPath(directory);
  public string Find(string name)
  {
-  var path = Path.Combine(Directory, name + ".exe");
+  if (name == "yt-dlp")
+  {
+   _ = VerifyFile("yt-dlp");
+   if (!System.IO.Directory.Exists(Path.Combine(Directory, "python"))) throw new DownloadFailure(FailureCode.Tool, "必要なPython Runtimeがありません。検証済みpublishフォルダを使用してください。");
+   foreach (var companion in System.IO.Directory.EnumerateFiles(Path.Combine(Directory, "python"), "*", SearchOption.AllDirectories))
+    _ = VerifyFile(Path.GetRelativePath(Directory, companion));
+   return VerifyFile("python/python.exe");
+  }
+  return VerifyFile(name + ".exe");
+ }
+ public string VerifyFile(string relative)
+ {
+  var path = Path.Combine(Directory, relative);
   var manifest = Path.Combine(Directory, "binary-hashes.json");
   if (!File.Exists(path) || !File.Exists(manifest)) throw new DownloadFailure(FailureCode.Tool, "必要な動画ツールがありません。検証済みpublishフォルダを使用してください。");
   var hashes = JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(manifest))!;
   using var file = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.Read);
   var actual = Convert.ToHexString(SHA256.HashData(file));
-  if (!hashes.TryGetValue(name + ".exe", out var expected) || !actual.Equals(expected, StringComparison.OrdinalIgnoreCase))
+  if (!hashes.TryGetValue(relative.Replace('\\', '/'), out var expected) || !actual.Equals(expected, StringComparison.OrdinalIgnoreCase))
    throw new DownloadFailure(FailureCode.Tool, "動画ツールの整合性を確認できませんでした。");
   return path;
  }
@@ -33,13 +45,13 @@ public sealed class ProcessRunner
    RedirectStandardOutput = true, RedirectStandardError = true, WorkingDirectory = workingDirectory,
    StandardOutputEncoding = Encoding.UTF8, StandardErrorEncoding = Encoding.UTF8 };
   foreach (var argument in arguments) start.ArgumentList.Add(argument);
-  start.Environment["DENO_NO_UPDATE_CHECK"] = "1";
-  start.Environment["DENO_NO_PROMPT"] = "1";
-  // PyInstaller and runtime caches must remain in the owned job directory, even when killed.
+  start.Environment.Remove("NODE_OPTIONS");
+  start.Environment.Remove("NODE_PATH");
+  // Runtime extraction/caches remain in the owned job directory, even when killed.
   start.Environment["TEMP"] = workingDirectory;
   start.Environment["TMP"] = workingDirectory;
   start.Environment["TMPDIR"] = workingDirectory;
-  start.Environment["DENO_DIR"] = Path.Combine(workingDirectory, "deno-cache");
+  start.Environment["DOTNET_BUNDLE_EXTRACT_BASE_DIR"] = Path.Combine(workingDirectory, "dotnet-bundle");
   using var process = new Process { StartInfo = start };
   using var deadline = CancellationTokenSource.CreateLinkedTokenSource(ct);
   deadline.CancelAfter(timeout);
