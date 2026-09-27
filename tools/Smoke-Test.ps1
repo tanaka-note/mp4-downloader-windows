@@ -14,10 +14,10 @@ $start.WorkingDirectory = [IO.Path]::GetDirectoryName($executable)
 $start.EnvironmentVariables['PATH'] = [Environment]::GetFolderPath('System') + ';' + $env:WINDIR
 foreach($name in @('VSINSTALLDIR','VCINSTALLDIR','VisualStudioVersion','DOTNET_ROOT')) { $start.EnvironmentVariables.Remove($name) }
 $process = [Diagnostics.Process]::Start($start)
-if (!$process.WaitForExit(55000)) { $process.Kill(); throw 'App diagnostic did not complete within its deadline' }
+if (!$process.WaitForExit(70000)) { $process.Kill(); throw 'App diagnostic did not complete within its deadline' }
 $report = Join-Path $diagnostics 'self-test.json'
 if ($process.ExitCode -ne 0 -or !(Test-Path -LiteralPath $report)) { throw 'Published application startup failed' }
 $result = Get-Content -LiteralPath $report -Raw | ConvertFrom-Json
-if (!$result.Startup -or !$result.Media -or $result.YtDlpVersion -ne '2026.08.19' -or ((!$result.WebView2DynamicDiscovery -or !$result.BrowserHlsDiscovery -or !$result.InvalidProxyReproduced -or !$result.BrowserPublicNavigation -or !$result.BrowserProxyBlocksPrivate) -and !($ReleaseSmoke -and $result.BrowserSkippedElevated)) -or !$result.MissingRuntimeHandled -or !$result.SafeSave -or !$result.TempCleanup) { throw ('Published app/browser diagnostic failed: ' + ($result | ConvertTo-Json -Compress)) }
+if (!$result.Startup -or !$result.Media -or $result.YtDlpVersion -ne '2026.08.19' -or ((!$result.WebView2DynamicDiscovery -or !$result.BrowserHlsDiscovery -or !$result.BrowserChangingCandidates -or !$result.BrowserReplayHeaders -or !$result.BrowserHlsSave -or !$result.InvalidProxyReproduced -or !$result.BrowserPublicNavigation -or !$result.BrowserProxyBlocksPrivate) -and !($ReleaseSmoke -and $result.BrowserSkippedElevated)) -or !$result.MissingRuntimeHandled -or !$result.SafeSave -or !$result.TempCleanup) { throw ('Published app/browser diagnostic failed: ' + ($result | ConvertTo-Json -Compress)) }
 if ($result.BrowserSkippedElevated) { Write-Host 'Browser playback NOT tested: hosted runner is elevated; Runtime environment creation and missing-Runtime failure tested.' }
 Write-Host "Published startup, Runtime detection, safe-save and cleanup passed. Dynamic browser discovery: $($result.WebView2DynamicDiscovery); browser private-peer blocking: $($result.BrowserProxyBlocksPrivate); Defender: $($result.Defender); pipeline: $($result.PipelineOutcome); Runtime: $($result.Runtime)."

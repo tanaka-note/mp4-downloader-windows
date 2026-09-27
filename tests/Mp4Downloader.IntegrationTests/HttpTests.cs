@@ -52,6 +52,21 @@ public class HttpTests
   using var response = await transport.SendAsync(new("https://a.invalid/video"), id, null, null, default);
   Assert.True(handler.FinalAuth);
  }
+ [Theory]
+ [InlineData("https://a.invalid/other", true)]
+ [InlineData("https://b.invalid/other", false)]
+ [InlineData("http://a.invalid/other", false)]
+ public async Task BrowserReplayHeadersStayBoundToMediaOrigin(string destination, bool expected)
+ {
+  var auth = new AuthContext();
+  auth.Headers["Referer"] = (new("https://a.invalid/video"), "https://page.invalid/watch?fixture=private");
+  auth.Headers["User-Agent"] = (new("https://a.invalid/video"), "FixtureBrowser/1.0");
+  var vault = new AuthVault(); var id = vault.Add(auth);
+  var handler = new BrowserRedirectHandler(destination);
+  using var transport = new HttpTransport(vault, handler);
+  using var response = await transport.SendAsync(new("https://a.invalid/video"), id, null, null, default);
+  Assert.True(handler.FirstReplay); Assert.Equal(expected, handler.FinalReplay);
+ }
  [Fact] public async Task HttpsDowngradeSendsNoSecrets()
  {
   var auth = new AuthContext(); auth.Cookies.Add(new Cookie("fixture", "nonsecret", "/", "a.invalid"));
@@ -115,6 +130,17 @@ public class HttpTests
   {
    if (calls++ == 0) { FirstAuth = request.Headers.Contains("Authorization"); var response = new HttpResponseMessage(HttpStatusCode.Redirect); response.Headers.Location = new(destination); return Task.FromResult(response); }
    FinalAuth = request.Headers.Contains("Authorization"); FinalCookie = request.Headers.Contains("Cookie");
+   return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent([1]), RequestMessage = request });
+  }
+ }
+ private sealed class BrowserRedirectHandler(string destination) : HttpMessageHandler
+ {
+  private int calls; public bool FirstReplay, FinalReplay;
+  protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
+  {
+   var replay = request.Headers.Referrer?.Host == "page.invalid" && request.Headers.UserAgent.ToString() == "FixtureBrowser/1.0";
+   if (calls++ == 0) { FirstReplay = replay; var response = new HttpResponseMessage(HttpStatusCode.Redirect); response.Headers.Location = new(destination); return Task.FromResult(response); }
+   FinalReplay = replay;
    return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent([1]), RequestMessage = request });
   }
  }
