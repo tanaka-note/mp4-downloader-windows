@@ -12,6 +12,7 @@ public sealed class DownloadCoordinator(IReadOnlyList<IResolver> resolvers, ICan
   PlaybackCandidate? candidate = null;
   string engine = "", mode = "";
   JobOutcome outcome;
+  DownloadFailure? lastFailure = null;
   try
   {
    page = UrlPolicy.Parse(url);
@@ -24,7 +25,7 @@ public sealed class DownloadCoordinator(IReadOnlyList<IResolver> resolvers, ICan
     ct.ThrowIfCancellationRequested();
     IReadOnlyList<PlaybackCandidate> found;
     try { found = await resolver.ResolveAsync(page, ct); }
-    catch (DownloadFailure ex) when (ex.CanFallback || ex.Code == FailureCode.AccessRequired) { continue; }
+    catch (DownloadFailure ex) when (ex.CanFallback || ex.Code == FailureCode.AccessRequired) { lastFailure = ex; continue; }
     var viable = found.Where(c => c.Viable).ToList();
     if (viable.Count == 0) continue;
     progress.Report(new(JobStage.Selecting, "動画候補を確認しています"));
@@ -61,7 +62,7 @@ public sealed class DownloadCoordinator(IReadOnlyList<IResolver> resolvers, ICan
     }
     if (acquired is not null) break;
    }
-   if (acquired is null || candidate is null) throw new DownloadFailure(FailureCode.NoMatch, "取得できる非DRM動画を特定できませんでした。");
+   if (acquired is null || candidate is null) throw lastFailure ?? new DownloadFailure(FailureCode.NoMatch, "取得できる非DRM動画を特定できませんでした。");
    progress.Report(new(JobStage.Probing, "動画の形式を確認しています"));
    var normalized = await media.NormalizeAsync(acquired, directory, progress, ct);
    mode = normalized.Plan.Mode.ToString();
@@ -85,7 +86,7 @@ public sealed class DownloadCoordinator(IReadOnlyList<IResolver> resolvers, ICan
    outcome = new(JobStage.Completed, notice, saved);
   }
   catch (OperationCanceledException) { outcome = new(JobStage.Cancelled, "中止しました。"); }
-  catch (DownloadFailure ex) { outcome = new(JobStage.Failed, ex.Message); }
+  catch (DownloadFailure ex) { outcome = new(JobStage.Failed, ex.Message, ErrorCode: ex.Code); }
   catch (IOException) { outcome = new(JobStage.Failed, "ファイル操作に失敗しました。空き容量とアクセス権を確認してください。"); }
   catch (UnauthorizedAccessException) { outcome = new(JobStage.Failed, "保存先または作業領域にアクセスできません。"); }
   catch (Exception) { outcome = new(JobStage.Failed, "処理を完了できませんでした。機密情報を含む詳細は記録していません。"); }
@@ -97,7 +98,7 @@ public sealed class DownloadCoordinator(IReadOnlyList<IResolver> resolvers, ICan
   }
   if (outcome.Stage != JobStage.Completed && page is not null)
   {
-   try { await storage.RecordAsync(new("動画", page.IdnHost, "", 0, 0, 0, 0, engine, mode, outcome.Stage == JobStage.Cancelled ? "中止" : "失敗", DateTimeOffset.Now, null), CancellationToken.None); }
+   try { await storage.RecordAsync(new("動画", page.IdnHost, "", 0, 0, 0, 0, engine, mode, outcome.Stage == JobStage.Cancelled ? "中止" : "失敗", DateTimeOffset.Now, null, outcome.ErrorCode), CancellationToken.None); }
    catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
   }
   progress.Report(new(outcome.Stage, outcome.Message, outcome.Stage == JobStage.Completed ? 1 : null));

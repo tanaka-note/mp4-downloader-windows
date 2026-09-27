@@ -1,6 +1,8 @@
-param([string]$Output=(Join-Path $PSScriptRoot '../artifacts/Mp4Downloader-v0.1.0-third-party-sources.zip'))
+param([string]$Output='')
 $ErrorActionPreference='Stop'
 $root=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
+$version=(Get-Content (Join-Path $PSScriptRoot 'release-policy.json') -Raw | ConvertFrom-Json).version
+if(!$Output){$Output=Join-Path $root ("artifacts/Mp4Downloader-v$version-third-party-sources.zip")}
 $manifest=Get-Content (Join-Path $PSScriptRoot 'third-party-sources.lock.json') -Raw | ConvertFrom-Json
 $cache=Join-Path $PSScriptRoot 'cache/sources'
 New-Item -ItemType Directory -Path $cache -Force | Out-Null
@@ -14,7 +16,7 @@ try{
   if((Get-FileHash $path -Algorithm SHA256).Hash.ToLowerInvariant() -ne $source.sha256){throw ('Source checksum mismatch: '+$source.name)}
   [IO.Compression.ZipFileExtensions]::CreateEntryFromFile($zip,$path,'sources/'+$source.file,[IO.Compression.CompressionLevel]::NoCompression) | Out-Null
  }
- foreach($relative in @(@($manifest.buildScripts)+@('tools/third-party-sources.lock.json','tools/media-sources.lock.json','tools/tools.lock.json','tools/binary-pins.json','docs/third-party-builds.md','THIRD_PARTY_NOTICES.md','THIRD_PARTY_TERMS.md','THIRD_PARTY_LICENSES.txt') | Sort-Object -Unique)){
+ foreach($relative in @(@($manifest.buildScripts)+@('global.json','tools/release-policy.json','tools/third-party-sources.lock.json','tools/media-sources.lock.json','tools/tools.lock.json','tools/binary-pins.json','docs/third-party-builds.md','THIRD_PARTY_NOTICES.md','THIRD_PARTY_TERMS.md','THIRD_PARTY_LICENSES.txt') | Sort-Object -Unique)){
   [IO.Compression.ZipFileExtensions]::CreateEntryFromFile($zip,(Join-Path $root $relative),$relative,[IO.Compression.CompressionLevel]::Optimal) | Out-Null
  }
  foreach($directory in @('licenses','tools/streaming-locks','tools/media-provenance')){

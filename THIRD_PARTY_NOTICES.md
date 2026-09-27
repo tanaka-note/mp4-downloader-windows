@@ -19,7 +19,7 @@ Application source: MIT (`LICENSE`). Each separate tool and runtime retains its 
 
 Installer preserves notices found in downloaded archives under tools/bin/licenses. Versions, archive URLs and SHA256 are in tools/tools.lock.json. Local publish includes those notices, LICENSE, this document and the tool manifest.
 
-The same GitHub Release provides `Mp4Downloader-v0.1.0-third-party-sources.zip` containing complete matching FFmpeg/external media-library sources, preserved upstream sources, exact commit/hash manifests, build scripts, lockfiles, compiler/configuration records and original notices. See `docs/third-party-builds.md`. There are no upstream source patches; build/configuration property overrides are documented. Source access does not depend solely on future upstream availability.
+The same GitHub Release provides `Mp4Downloader-v0.1.1-third-party-sources.zip` containing complete matching FFmpeg/external media-library sources, preserved upstream sources, exact commit/hash manifests, build scripts, lockfiles, compiler/configuration records and original notices. See `docs/third-party-builds.md`. There are no upstream source patches; build/configuration property overrides are documented. Source access does not depend solely on future upstream availability.
 
 Exact executable/library SHA256, version and origin are in `THIRD_PARTY_MANIFEST.json` inside the Windows ZIP and `tools/binary-pins.json`. Original NuGet metadata/license/notices are preserved in `licenses/nuget/`. WebView2 Evergreen Runtime itself is not redistributed. First-party MIT rights do not replace any third-party terms.
 

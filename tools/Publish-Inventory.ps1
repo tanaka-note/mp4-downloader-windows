@@ -2,6 +2,7 @@ param([Parameter(Mandatory=$true)][string]$PublishDirectory)
 $ErrorActionPreference='Stop'
 $root=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $published=[IO.Path]::GetFullPath($PublishDirectory)
+$releaseVersion=(Get-Content (Join-Path $PSScriptRoot 'release-policy.json') -Raw | ConvertFrom-Json).version
 $packageMetadata=Get-Content (Join-Path $root 'licenses/nuget/packages.json') -Raw | ConvertFrom-Json
 $assets=Get-Content (Join-Path $root 'src/Mp4Downloader.App/obj/project.assets.json') -Raw | ConvertFrom-Json -AsHashtable
 $index=@{}
@@ -31,7 +32,7 @@ foreach($file in $binaries){
   $build=if($toolName -eq 'ffmpeg'){'tools/Build-Media.sh; tools/media-provenance'}elseif($toolName -eq 'N_m3u8DL-RE'){'tools/Build-Streaming.ps1; tools/streaming-locks'}else{'Unmodified upstream official distribution; tools/tools.lock.json'}
   $source='Companion third-party-sources.zip; tools/third-party-sources.lock.json'
  }elseif($file.Name -like 'Mp4Downloader.*'){
-  $component='MP4 Downloader';$license='MIT';$upstream='https://github.com/tanaka-note/mp4-downloader-windows';$version='0.1.0';$build='tools/Publish.ps1';$source='GitHub tag v0.1.0'
+  $component='MP4 Downloader';$license='MIT';$upstream='https://github.com/tanaka-note/mp4-downloader-windows';$version=$releaseVersion;$build='tools/Publish.ps1';$source='GitHub tag v'+$releaseVersion
  }else{
   foreach($candidate in $index[$file.Name]){
    if((Get-FileHash $candidate.file).Hash.ToLowerInvariant() -eq $hash){

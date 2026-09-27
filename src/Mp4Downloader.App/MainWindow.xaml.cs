@@ -117,6 +117,7 @@ public sealed partial class MainWindow : Window, ICandidateSelector
    var row = new StackPanel { Spacing = 4, Margin = new Thickness(0, 4, 0, 8) };
    row.Children.Add(new TextBlock { Text = $"{entry.Status} · {entry.Title}", TextWrapping = TextWrapping.Wrap });
    row.Children.Add(new TextBlock { Text = $"{entry.Host} · {entry.FileName} · {entry.Size / 1024 / 1024} MB · {entry.CompletedAt:yyyy/MM/dd HH:mm}" });
+   if (entry.ErrorCode is { } code) row.Children.Add(new TextBlock { Text = "エラー分類: " + code, TextWrapping = TextWrapping.Wrap });
    if (entry.SavedPath is { } path) { var button = new Button { Content = "保存場所を開く" }; button.Click += (_, _) => ShowFolder(path); row.Children.Add(button); }
    HistoryPanel.Children.Add(row);
   }

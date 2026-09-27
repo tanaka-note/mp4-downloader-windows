@@ -15,7 +15,7 @@ public sealed class BrowserResolver(Window owner, HttpTransport http, ManifestRe
  {
   _ = await NetworkPolicy.PublicAddressesAsync(page.IdnHost,ct);
   CoreWebView2Environment environment;
-  try { environment = await CoreWebView2Environment.CreateWithOptionsAsync(null, profile, new CoreWebView2EnvironmentOptions { AdditionalBrowserArguments = $"--proxy-server={proxy.AbsoluteUri} --proxy-bypass-list=<-loopback>" }); }
+  try { environment = await CoreWebView2Environment.CreateWithOptionsAsync(null, profile, new CoreWebView2EnvironmentOptions { AdditionalBrowserArguments = BrowserProxyConfiguration.Arguments(proxy) }); }
   catch (Exception) { throw new DownloadFailure(FailureCode.Tool, "WebView2 Runtimeが利用できません。設定のMicrosoft公式導入案内を確認してください。"); }
   var window = new BrowserWindow();
   window.Activate();
@@ -29,6 +29,25 @@ public sealed class BrowserResolver(Window owner, HttpTransport http, ManifestRe
 
 public sealed class BrowserWindow : Window
 {
+ internal async Task VerifyPublicNavigationAsync(CoreWebView2Environment environment, CancellationToken ct)
+ {
+  await browser.EnsureCoreWebView2Async(environment);
+  var loaded = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+  void Completed(object? sender, CoreWebView2NavigationCompletedEventArgs e)
+  {
+   if (e.IsSuccess && e.HttpStatusCode == 200) loaded.TrySetResult(true);
+   else loaded.TrySetException(new InvalidOperationException("Public browser navigation failed: " + e.WebErrorStatus));
+  }
+  browser.CoreWebView2.NavigationCompleted += Completed;
+  try
+  {
+   browser.CoreWebView2.Navigate("https://example.com/");
+   await loaded.Task.WaitAsync(TimeSpan.FromSeconds(15), ct);
+   var title = await browser.CoreWebView2.ExecuteScriptAsync("document.title");
+   if (title != "\"Example Domain\"") throw new InvalidOperationException("Public browser navigation did not load the expected document.");
+  }
+  finally { browser.CoreWebView2.NavigationCompleted -= Completed; }
+ }
  private readonly WebView2 browser = new();
  private readonly TextBlock host = new() { TextWrapping = TextWrapping.Wrap };
  private readonly TextBlock notice = new() { Text = "必要ならログインして動画を再生し、「動画を確認」を押してください。", TextWrapping = TextWrapping.Wrap };
@@ -99,6 +118,14 @@ public sealed class BrowserWindow : Window
    try { var auth = e.Request.Headers.GetHeader("Authorization"); if (!string.IsNullOrEmpty(auth)) authorizations[uri] = auth; } catch (ArgumentException) { }
   };
   var ready = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+  core.NavigationCompleted += (_, e) =>
+  {
+   if (!e.IsSuccess && !fixtureMode)
+   {
+    notice.Text = "ページへの接続に失敗しました（" + e.WebErrorStatus + "）。";
+    ready.TrySetException(new DownloadFailure(FailureCode.Network, notice.Text));
+   }
+  };
   done.Click += (_, _) => ready.TrySetResult(true);
   Closed += (_, _) => ready.TrySetCanceled();
   using var registration = ct.Register(() => DispatcherQueue.TryEnqueue(() => { ready.TrySetCanceled(ct); browser.Close(); }));

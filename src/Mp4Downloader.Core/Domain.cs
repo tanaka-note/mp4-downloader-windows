@@ -25,8 +25,8 @@ public sealed record MediaInfo(string Path, string Container, VideoInfo? Video, 
 public sealed record Mp4Plan(Mp4Mode Mode, bool EncodeVideo, bool EncodeAudio);
 public sealed record JobProgress(JobStage Stage, string Message, double? Fraction = null);
 public sealed record HistoryEntry(string Title, string Host, string FileName, long Size, int Width, int Height,
- double Duration, string Engine, string Mp4Mode, string Status, DateTimeOffset CompletedAt, string? SavedPath);
-public sealed record JobOutcome(JobStage Stage, string Message, string? SavedPath = null);
+ double Duration, string Engine, string Mp4Mode, string Status, DateTimeOffset CompletedAt, string? SavedPath, FailureCode? ErrorCode = null);
+public sealed record JobOutcome(JobStage Stage, string Message, string? SavedPath = null, FailureCode? ErrorCode = null);
 
 public interface IResolver
 {
