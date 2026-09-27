@@ -47,4 +47,4 @@ CIではrestore、build、全テスト、セキュリティ回帰、publish、�
 
 アプリ自身のソースはMIT。独立したFFmpegはGPLv3+、yt-dlp zipimportはUnlicense／ISC／MIT、Microsoft配布DLLは元のMicrosoft条件です。[LICENSE](LICENSE)、[third-party notices](THIRD_PARTY_NOTICES.md)、[Microsoft等の配布条件](THIRD_PARTY_TERMS.md)、[同梱notice](licenses/)を参照してください。Microsoftコンポーネントの利用・再配布には、その元の条件への同意が必要です。ツールのVersion・取得元・SHA256は`tools/tools.lock.json`で固定しています。
 
-対応ソース・正確なcommit/hash・ビルド手順・設定・lockfileを`Mp4Downloader-v0.1.1-third-party-sources.zip`に保存します。FFmpegはx264／libvpx／Opusのみを追加した自前ビルドで、nonfreeを含みません。配布ZIP内の`THIRD_PARTY_MANIFEST.json`は全実行ファイル／DLLの由来とhashを記録します。source・notice・hash・構成・assetが不足するとRelease gateが失敗します。[ビルド記録](docs/third-party-builds.md)、[architecture](docs/architecture.md)、[検証記録](docs/release-validation.md)を参照してください。
+対応ソース・正確なcommit/hash・ビルド手順・設定・lockfileを`Mp4Downloader-v0.1.2-third-party-sources.zip`に保存します。FFmpegはx264／libvpx／Opusのみを追加した自前ビルドで、nonfreeを含みません。配布ZIP内の`THIRD_PARTY_MANIFEST.json`は全実行ファイル／DLLの由来とhashを記録します。source・notice・hash・構成・assetが不足するとRelease gateが失敗します。[ビルド記録](docs/third-party-builds.md)、[architecture](docs/architecture.md)、[検証記録](docs/release-validation.md)を参照してください。

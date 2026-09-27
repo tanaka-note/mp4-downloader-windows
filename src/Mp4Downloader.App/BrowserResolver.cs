@@ -16,19 +16,20 @@ public sealed class BrowserResolver(Window owner, HttpTransport http, ManifestRe
   _ = await NetworkPolicy.PublicAddressesAsync(page.IdnHost,ct);
   CoreWebView2Environment environment;
   try { environment = await CoreWebView2Environment.CreateWithOptionsAsync(null, profile, new CoreWebView2EnvironmentOptions { AdditionalBrowserArguments = BrowserProxyConfiguration.Arguments(proxy) }); }
-  catch (Exception) { throw new DownloadFailure(FailureCode.Tool, "WebView2 Runtimeが利用できません。設定のMicrosoft公式導入案内を確認してください。"); }
+  catch (Exception ex) { throw BrowserFailureDetails.From(BrowserPhase.Initialization, ex); }
   var window = new BrowserWindow();
   window.Activate();
   try { return await window.ResolveAsync(environment, page, http, manifests, vault, ct); }
   catch (OperationCanceledException) { throw; }
   catch (DownloadFailure) { throw; }
-  catch (Exception) { throw new DownloadFailure(FailureCode.Tool, "WebView2の初期化またはページ解析に失敗しました。Runtimeを修復・更新してください。"); }
+  catch (Exception ex) { throw BrowserFailureDetails.From(window.Phase, ex); }
   finally { window.Close(); owner.Activate(); }
  }
 }
 
 public sealed class BrowserWindow : Window
 {
+ internal BrowserPhase Phase { get; private set; } = BrowserPhase.Initialization;
  internal async Task VerifyPublicNavigationAsync(CoreWebView2Environment environment, CancellationToken ct)
  {
   await browser.EnsureCoreWebView2Async(environment);
@@ -53,7 +54,8 @@ public sealed class BrowserWindow : Window
  private readonly TextBlock notice = new() { Text = "必要ならログインして動画を再生し、「動画を確認」を押してください。", TextWrapping = TextWrapping.Wrap };
  private readonly Button done = new() { Content = "動画を確認" };
  private readonly Dictionary<Uri, string> observed = [];
- private readonly Dictionary<Uri, string> authorizations = [];
+ private readonly Dictionary<Uri, Dictionary<string, string>> replayHeaders = [];
+ internal int CapturedRefererCount => replayHeaders.Values.Count(h => h.ContainsKey("Referer"));
  public BrowserWindow()
  {
   Title = "MP4 Downloader — 動画ページ";
@@ -77,9 +79,9 @@ public sealed class BrowserWindow : Window
   core.Settings.IsGeneralAutofillEnabled = false;
   core.Settings.AreHostObjectsAllowed = false;
   core.Settings.IsWebMessageEnabled = false;
+  core.AddWebResourceRequestedFilter("*", CoreWebView2WebResourceContext.All);
   if (!fixtureMode)
   {
-   core.AddWebResourceRequestedFilter("*", CoreWebView2WebResourceContext.All);
    core.WebResourceRequested += async (sender, e) =>
    {
     var deferral = e.GetDeferral();
@@ -114,8 +116,15 @@ public sealed class BrowserWindow : Window
    var path = uri.AbsolutePath.ToLowerInvariant();
    if (!(mime.StartsWith("video/", StringComparison.OrdinalIgnoreCase) || mime.Contains("mpegurl", StringComparison.OrdinalIgnoreCase) || mime.Contains("dash+xml", StringComparison.OrdinalIgnoreCase) || path.EndsWith(".mp4") || path.EndsWith(".webm") || path.EndsWith(".m3u8") || path.EndsWith(".mpd"))) return;
    if (path.EndsWith(".ts") || path.EndsWith(".m4s") || observed.Count >= 100) return;
+   if (e.Response.StatusCode is < 200 or >= 300) return;
    observed[uri] = mime;
-   try { var auth = e.Request.Headers.GetHeader("Authorization"); if (!string.IsNullOrEmpty(auth)) authorizations[uri] = auth; } catch (ArgumentException) { }
+   var headers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+   foreach (var header in e.Request.Headers)
+   {
+    var name = new[] { "Authorization", "Referer", "User-Agent" }.FirstOrDefault(n => n.Equals(header.Key, StringComparison.OrdinalIgnoreCase));
+    if (name is not null && !string.IsNullOrEmpty(header.Value)) headers[name] = header.Value;
+   }
+   replayHeaders[uri] = headers;
   };
   var ready = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
   core.NavigationCompleted += (_, e) =>
@@ -129,6 +138,7 @@ public sealed class BrowserWindow : Window
   done.Click += (_, _) => ready.TrySetResult(true);
   Closed += (_, _) => ready.TrySetCanceled();
   using var registration = ct.Register(() => DispatcherQueue.TryEnqueue(() => { ready.TrySetCanceled(ct); browser.Close(); }));
+  Phase = BrowserPhase.Navigation;
   core.Navigate(page.AbsoluteUri);
   if (fixtureMode)
   {
@@ -137,6 +147,9 @@ public sealed class BrowserWindow : Window
    ready.TrySetResult(true);
   }
   await ready.Task.WaitAsync(ct);
+  done.IsEnabled = false;
+  notice.Text = "検出した動画候補を解析しています。";
+  Phase = BrowserPhase.Dom;
   var script = "JSON.stringify(Array.from(document.querySelectorAll('video')).map(v=>({src:v.currentSrc||v.src,width:v.videoWidth,height:v.videoHeight,duration:Number.isFinite(v.duration)?v.duration:null})))";
   var result = await core.ExecuteScriptAsync(script);
   var players = new Dictionary<Uri, (int Width, int Height, double? Duration)>();
@@ -149,9 +162,15 @@ public sealed class BrowserWindow : Window
     { observed.TryAdd(uri, ""); players[uri] = (player.GetProperty("width").GetInt32(), player.GetProperty("height").GetInt32(), player.GetProperty("duration").TryGetDouble(out var duration) ? duration : null); }
   }
   var candidates = new List<PlaybackCandidate>();
-  foreach (var (url, mime) in observed)
+  DownloadFailure? candidateFailure = null;
+  // Network events continue while cookies and manifests are awaited. Enumerate a
+  // fixed batch, never the live dictionary that those events keep extending.
+  var batch = observed.Select(item => (Url: item.Key, Mime: item.Value,
+   Headers: replayHeaders.GetValueOrDefault(item.Key)?.ToArray() ?? [])).ToArray();
+  foreach (var (url, mime, headers) in batch)
   {
    ct.ThrowIfCancellationRequested();
+   Phase = BrowserPhase.Cookies;
    var context = new AuthContext();
    foreach (var cookie in await core.CookieManager.GetCookiesAsync(url.AbsoluteUri))
    {
@@ -163,8 +182,10 @@ public sealed class BrowserWindow : Window
     }
     catch (CookieException) { }
    }
-   if (authorizations.TryGetValue(url, out var authorization)) context.Headers["Authorization"] = (url, authorization);
+   foreach (var header in headers) context.Headers[header.Key] = (url, header.Value);
+   if (!context.Headers.ContainsKey("User-Agent")) context.Headers["User-Agent"] = (url, core.Settings.UserAgent);
    var authId = context.Cookies.Count > 0 || context.Headers.Count > 0 ? vault.Add(context) : null;
+   Phase = BrowserPhase.Candidates;
    try
    {
     if (url.AbsolutePath.EndsWith(".m3u8", StringComparison.OrdinalIgnoreCase) || url.AbsolutePath.EndsWith(".mpd", StringComparison.OrdinalIgnoreCase) || mime.Contains("mpegurl", StringComparison.OrdinalIgnoreCase) || mime.Contains("dash+xml", StringComparison.OrdinalIgnoreCase))
@@ -175,9 +196,11 @@ public sealed class BrowserWindow : Window
     candidates.Add(new("browser:" + candidates.Count, "動画", page, MediaKind.Direct, [new("video", probe.Url, "video")], Protection.Clear,
      "Current video element and media response", true, player.Duration, player.Width, player.Height, authId));
    }
-   catch (DownloadFailure ex) when (ex.CanFallback || ex.Code == FailureCode.AccessRequired) { }
+   catch (DownloadFailure ex) when (ex.CanFallback || ex.Code == FailureCode.AccessRequired) { candidateFailure = ex; }
   }
   browser.Close();
+  if (candidates.Count == 0 && !fixtureMode)
+   throw candidateFailure ?? new DownloadFailure(FailureCode.NoMatch, "ページは開けましたが、取得できる動画候補を検出できませんでした。動画を再生してから、もう一度確認してください。");
   return candidates;
  }
 }

@@ -1,0 +1,9 @@
+WebView2でページを開いた後、動画候補の解析中に通信イベントが候補一覧を追加すると例外になる不具合を修正しました。解析は確認時点の固定した候補・要求ヘッダーを使います。
+
+検出した要求のRefererとUser-AgentをCookie・Authorizationとともにメモリ内で保持し、既存の取得先Origin制限で再利用します。別OriginへのredirectとHTTPSからHTTPへの転送にブラウザ要求ヘッダーを引き継ぎません。履歴やログへURL・Cookie・要求ヘッダー・例外本文を保存しません。
+
+ページ読み取り・Cookie準備・動画候補の解析の例外をRuntimeの故障として表示していた不適切な案内を修正しました。機密情報を含まない処理段階・例外型・HRESULTを表示します。候補がない場合と候補の取得が拒否された場合を区別します。タイトルバーにバージョンを表示します。
+
+Windows 11 x64用。固定ツール、DRM・暗号化HLS・認証付きDASH等の未対応範囲は継続します。個々の報告サイトでの動画保存成功は未確認です。既存Downloader 1/2、T-ROOM、Cloudflareへの変更はありません。
+
+未署名、WebView2 Evergreen Runtimeが必要です。ZIPは全展開してください。SmartScreen警告の可能性があります。DefenderがCleanと判定した場合だけ保存します。同梱FFmpeg 9.0.2（GPLv3+）、yt-dlp 2026.08.19等のライセンス・対応ソース・SHA256SUMSを同じReleaseに添付します。

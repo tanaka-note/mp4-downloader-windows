@@ -26,6 +26,7 @@ public sealed partial class MainWindow : Window, ICandidateSelector
  public MainWindow()
  {
   InitializeComponent();
+  Title = "MP4 Downloader v" + typeof(MainWindow).Assembly.GetName().Version!.ToString(3);
   AppWindow.Resize(new Windows.Graphics.SizeInt32(760, 680));
   browserDirectory = Path.Combine(storage.Root, "WebView2");
   http = new(vault);

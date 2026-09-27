@@ -54,4 +54,10 @@ v0.1.0のブラウザprivate-network試験は、候補がゼロだっただけ�
 
 2026-09-27、旧設定の失敗を通常権限のWebView2で再現。authorityだけを渡す新設定でexample.comのHTTPSページとDOMを確認し、proxyのrequest counterで実際の経由を確認。private fixtureはcounter増加と候補ゼロを両方検証。JavaScript fetchで動的に取得されるHLS m3u8も候補として検出した。Core 35 / Integration 98の133件PASS、FAIL 0 / SKIP 0。正常起動、実Defender Clean、保存・cleanupもPASS。個別の報告サイトでの取得成功は未確認。認証／DRM／サイト側拒否への対応を保証しない。
 
+## v0.1.2 ブラウザ解析の回帰検証
+
+2026-09-27、通常権限のWebView2で、manifest解析のawait中にもNetwork候補が増加するfixtureを追加。固定した一覧を使う修正前はInvalidOperationExceptionで診断失敗。修正後は増加する候補、明示的な同Origin referrerを持つブラウザ要求のReferer/User-Agent再利用、HLS segment取得、実FFmpegでのMP4処理、実Defender Clean、保存・cleanupまでPASS。公開HTTPS接続とprivate network拒否もPASS。Core 36 / Integration 105の141件PASS、FAIL/SKIP 0。license回帰10件PASS。
+
+例外表示は初期化・DOM読み取り・Cookie準備・候補解析を区別し、処理段階・例外型・HRESULTだけを使う。例外本文・機密URL・ヘッダーは履歴や診断へ残さない。個別の報告サイトでの取得成功は未確認で、汎用fixtureの成功とは区別する。
+
 Releaseのファイル名・ソースpackage・manifestのversionをrelease-policyから生成し、v0.1.1を新規ビルドする。メディアツールのソース／build／binary pinは変更していないため再ビルドせず、固定ソース変更時または明示dispatch時だけ専用compiler workflowを実行する。

@@ -55,16 +55,19 @@ public class CoordinatorTests
  }
  private static DownloadCoordinator Build(FakeStorage storage, ScanVerdict verdict, Protection protection = Protection.Clear, FakeEngine? engine = null) =>
   new([new FakeResolver(protection)], new FakeSelector(), new FakePlanner(), [engine ?? new FakeEngine()], new FakeMedia(), new FakeScanner(verdict), storage);
- [Fact] public async Task FinalBrowserFailureRemainsVisibleAndRecordsOnlyTypedCode()
+ [Theory]
+ [InlineData(FailureCode.NoMatch, FailureCode.Network)]
+ [InlineData(FailureCode.AccessRequired, FailureCode.NoMatch)]
+ public async Task FinalBrowserFailureRemainsVisibleAndRecordsOnlyTypedCode(FailureCode first, FailureCode final)
  {
   var storage = new FakeStorage();
-  var coordinator = new DownloadCoordinator([new FailedResolver(FailureCode.NoMatch), new FailedResolver(FailureCode.Network)],
+  var coordinator = new DownloadCoordinator([new FailedResolver(first), new FailedResolver(final)],
    new FakeSelector(), new FakePlanner(), [new FakeEngine()], new FakeMedia(), new FakeScanner(ScanVerdict.Clean), storage);
   var result = await coordinator.RunAsync("https://example.invalid/?signature=secret", storage.Root, new Progress<JobProgress>(), default);
   Assert.Equal(JobStage.Failed, result.Stage);
-  Assert.Equal(FailureCode.Network, result.ErrorCode);
-  Assert.Equal("fixture Network", result.Message);
-  Assert.Equal(FailureCode.Network, storage.Entries.Single().ErrorCode);
+  Assert.Equal(final, result.ErrorCode);
+  Assert.Equal("fixture " + final, result.Message);
+  Assert.Equal(final, storage.Entries.Single().ErrorCode);
   Assert.Equal("example.invalid", storage.Entries.Single().Host);
   Assert.True(storage.Cleaned);
  }
