@@ -1,6 +1,6 @@
 param(
  [string]$ToolDirectory=(Join-Path $PSScriptRoot 'bin'),
- [string]$SourcePackage=(Join-Path $PSScriptRoot '../artifacts/Mp4Downloader-v0.1.0-third-party-sources.zip'),
+ [string]$SourcePackage='',
  [string]$ToolLock=(Join-Path $PSScriptRoot 'tools.lock.json'),
  [string]$BinaryPins=(Join-Path $PSScriptRoot 'binary-pins.json'),
  [string]$NoticesDirectory=(Join-Path $PSScriptRoot '../licenses'),
@@ -10,6 +10,8 @@ param(
 )
 $ErrorActionPreference='Stop'
 $root=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
+$version=(Get-Content (Join-Path $PSScriptRoot 'release-policy.json') -Raw | ConvertFrom-Json).version
+if(!$SourcePackage){$SourcePackage=Join-Path $root ("artifacts/Mp4Downloader-v$version-third-party-sources.zip")}
 $lock=Get-Content -LiteralPath $ToolLock -Raw | ConvertFrom-Json
 foreach($item in $lock.tools){
  if(!$item.version -or $item.sha256 -notmatch '^[0-9a-f]{64}$' -or $item.url -match '/latest/'){throw 'Unpinned tool'}
@@ -80,7 +82,7 @@ try{
  }
 }finally{$zip.Dispose()}
 if($RequireReleaseAssets){
- $required=@('Mp4Downloader-v0.1.0-win-x64.zip','Mp4Downloader-v0.1.0-third-party-sources.zip','SHA256SUMS','LICENSE','THIRD_PARTY_NOTICES.md','THIRD_PARTY_TERMS.md','THIRD_PARTY_LICENSES.txt')
+ $required=@("Mp4Downloader-v$version-win-x64.zip","Mp4Downloader-v$version-third-party-sources.zip",'SHA256SUMS','LICENSE','THIRD_PARTY_NOTICES.md','THIRD_PARTY_TERMS.md','THIRD_PARTY_LICENSES.txt')
  foreach($name in $required){if(!(Test-Path (Join-Path $ReleaseAssetDirectory $name))){throw ('Release asset missing: '+$name)}}
  $sums=@{}
  foreach($line in Get-Content (Join-Path $ReleaseAssetDirectory 'SHA256SUMS')){

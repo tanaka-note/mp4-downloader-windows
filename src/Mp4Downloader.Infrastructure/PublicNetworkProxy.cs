@@ -13,6 +13,8 @@ public sealed class PublicNetworkProxy : IDisposable
  private readonly CancellationTokenSource stop = new();
  private readonly SemaphoreSlim clients = new(16,16);
  public Uri Address { get; }
+ private long requests;
+ public long RequestCount => Interlocked.Read(ref requests);
  public PublicNetworkProxy()
  {
   listener.Start(); Address = new($"http://127.0.0.1:{((IPEndPoint)listener.LocalEndpoint).Port}"); _ = AcceptAsync();
@@ -48,6 +50,7 @@ public sealed class PublicNetworkProxy : IDisposable
     if(bytes.Count>=16384) return;
     var lines=Encoding.ASCII.GetString(bytes.ToArray()).Split("\r\n");var first=lines[0].Split(' ');
     if(first.Length!=3 || first[2] is not ("HTTP/1.1" or "HTTP/1.0")) return;
+    Interlocked.Increment(ref requests);
     var tunnel=first[0]=="CONNECT";
     var target=UrlPolicy.Parse(tunnel?"https://"+first[1]:first[1]);
     if(target.Port is not (80 or 443) || !tunnel && target.Scheme!="http") throw new DownloadFailure(FailureCode.Unsupported,"Unsupported proxy target");

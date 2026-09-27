@@ -55,6 +55,32 @@ public class CoordinatorTests
  }
  private static DownloadCoordinator Build(FakeStorage storage, ScanVerdict verdict, Protection protection = Protection.Clear, FakeEngine? engine = null) =>
   new([new FakeResolver(protection)], new FakeSelector(), new FakePlanner(), [engine ?? new FakeEngine()], new FakeMedia(), new FakeScanner(verdict), storage);
+ [Fact] public async Task FinalBrowserFailureRemainsVisibleAndRecordsOnlyTypedCode()
+ {
+  var storage = new FakeStorage();
+  var coordinator = new DownloadCoordinator([new FailedResolver(FailureCode.NoMatch), new FailedResolver(FailureCode.Network)],
+   new FakeSelector(), new FakePlanner(), [new FakeEngine()], new FakeMedia(), new FakeScanner(ScanVerdict.Clean), storage);
+  var result = await coordinator.RunAsync("https://example.invalid/?signature=secret", storage.Root, new Progress<JobProgress>(), default);
+  Assert.Equal(JobStage.Failed, result.Stage);
+  Assert.Equal(FailureCode.Network, result.ErrorCode);
+  Assert.Equal("fixture Network", result.Message);
+  Assert.Equal(FailureCode.Network, storage.Entries.Single().ErrorCode);
+  Assert.Equal("example.invalid", storage.Entries.Single().Host);
+  Assert.True(storage.Cleaned);
+ }
+ [Fact] public async Task FailedResolverDoesNotPreventLaterSuccess()
+ {
+  var storage = new FakeStorage();
+  var coordinator = new DownloadCoordinator([new FailedResolver(FailureCode.Network), new FakeResolver(Protection.Clear)],
+   new FakeSelector(), new FakePlanner(), [new FakeEngine()], new FakeMedia(), new FakeScanner(ScanVerdict.Clean), storage);
+  var result = await coordinator.RunAsync("https://example.invalid/", storage.Root, new Progress<JobProgress>(), default);
+  Assert.Equal(JobStage.Completed, result.Stage); Assert.Null(result.ErrorCode);
+ }
+ private sealed class FailedResolver(FailureCode code) : IResolver
+ {
+  public string Name => "fixture failed";
+  public Task<IReadOnlyList<PlaybackCandidate>> ResolveAsync(Uri page, CancellationToken ct) => throw new DownloadFailure(code, "fixture " + code);
+ }
  [Theory]
  [InlineData(false, JobStage.Completed)]
  [InlineData(true, JobStage.Failed)]

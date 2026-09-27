@@ -47,3 +47,11 @@ shellを使用しないArgumentList、ローカルFFmpeg input/protocol制限、
 FFmpeg 9.0.2固定自前ビルドへの置換後、Core 33 / Integration 93の126件PASS、FAIL 0 / SKIP 0。ライセンスgate PASS、危険な構成・改変・source/notice/asset不足を拒否する9件PASS。371の配布実行ファイル・ライブラリをhashと原パッケージで照合した。実HTTP 10ケース、公開MP4/HLS/DASH、yt-dlp generic Directの取得・実Defender Clean・保存・cleanupを再確認。通常権限の新規publishでWinUI起動、WebView2動的検出、private-peer拒否、FFmpeg、yt-dlp、Defender Clean、保存・cleanupがPASS。ブラウザRuntimeは153.0.4234.48。対応ソース10archivesと42 runtime file pinsを照合した。main/Releaseのclean buildとアップロードassetの最終結果はGitHub checksとReleaseへ記録する。
 
 最終点検で、NuGetにMIT expressionだけが含まれるSpectre.Console/AnsiとSystem.CommandLineの原文を補完した。各NuGetの固定repository commitから取得し、原文hashを固定してsource/package両方へ同梱。変更された原文を拒否する回帰試験を追加し、ライセンス回帰試験は10件となる。
+
+## v0.1.1：WebView2プロキシの誤った成功判定を訂正
+
+v0.1.0のブラウザprivate-network試験は、候補がゼロだっただけでPASSとしていた。末尾スラッシュ付きproxy指定により全ページへの接続が失敗した場合も通過する不十分な試験だった。この結果から通常の公開ページを解析できると判断した以前の報告を訂正する。
+
+2026-09-27、旧設定の失敗を通常権限のWebView2で再現。authorityだけを渡す新設定でexample.comのHTTPSページとDOMを確認し、proxyのrequest counterで実際の経由を確認。private fixtureはcounter増加と候補ゼロを両方検証。JavaScript fetchで動的に取得されるHLS m3u8も候補として検出した。Core 35 / Integration 98の133件PASS、FAIL 0 / SKIP 0。正常起動、実Defender Clean、保存・cleanupもPASS。個別の報告サイトでの取得成功は未確認。認証／DRM／サイト側拒否への対応を保証しない。
+
+Releaseのファイル名・ソースpackage・manifestのversionをrelease-policyから生成し、v0.1.1を新規ビルドする。メディアツールのソース／build／binary pinは変更していないため再ビルドせず、固定ソース変更時または明示dispatch時だけ専用compiler workflowを実行する。

@@ -1,0 +1,9 @@
+WebView2が `ERR_NO_SUPPORTED_PROXIES` でページを開けない不具合を修正しました。プロキシ設定の末尾 `/` を除き、Chromiumにscheme/host/portを渡します。
+
+以前のprivate-network拒否試験は全ページに接続できない状態も成功扱いにしていました。通常権限で旧設定の失敗を再現し、修正した同じプロキシ設定で公開HTTPSページのDOMが読み込まれることと、private requestが実際にプロキシへ到達して拒否されることを確認します。JavaScriptによるHLS `.m3u8` のNetwork検出試験も追加しました。管理者CIではブラウザ試験を省略するため、公開前に通常権限で配布ZIPを再検証します。
+
+ブラウザ接続エラーを未検出として消さず表示し、失敗履歴には機密URLやCookieを含まない型付きエラー分類を残します。
+
+Windows 11 x64、未署名、WebView2 Evergreen Runtimeが必要です。ZIPは全展開してください。SmartScreen警告の可能性があります。DefenderがCleanと判定した場合のみ保存します。DRM、暗号化HLS、認証付きDASH、live、HDR、音声のみ等の既知の未対応範囲は継続します。今回の接続修正は個々のサイトの取得成功を保証するものではありません。
+
+同梱ツールの固定バージョン・ライセンス・対応ソースはv0.1.0と同じです。対応ソース、元ライセンス、SHA256SUMSを同じReleaseに添付します。既存Downloader 1/2・T-ROOM・Cloudflareへの変更はありません。

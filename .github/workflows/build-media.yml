@@ -1,7 +1,8 @@
 name: Build licensed media tools
 on:
   push:
-    paths: ['tools/Build-Media.sh', 'tools/media-sources.lock.json', '.github/workflows/build-media.yml']
+    branches: [main]
+    paths: ['tools/Build-Media.sh', 'tools/media-sources.lock.json']
   workflow_dispatch:
 permissions:
   contents: read
